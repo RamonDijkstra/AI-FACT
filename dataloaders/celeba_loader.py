@@ -15,7 +15,7 @@
 ###############################################################################
 
 """
-Helper function that loads CIFAR100 data
+Helper function that loads CelebA data
 """
 
 import torch
@@ -24,7 +24,7 @@ import torchvision.transforms as transforms
 
 def load_data():
 	'''
-    loads the CIFAR100 dataset and splits into
+    loads the CelebA dataset and splits into
 	train and test sets
     '''
 	
@@ -32,17 +32,14 @@ def load_data():
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-	trainset = torchvision.datasets.CIFAR100(root='./data/cifar100', train=True,
+	trainset = torchvision.datasets.CelebA(root='./data/celeba', train=True,
                                         download=True, transform=transform)
 	trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                           shuffle=True, num_workers=2)
 
-	testset = torchvision.datasets.CIFAR100(root='./data/cifar100', train=False,
+	testset = torchvision.datasets.CelebA(root='./data/celeba', train=False,
                                        download=True, transform=transform)
 	testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                          shuffle=False, num_workers=2)
-
-	classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-	return classes, trainloader, testloader
+									
+	return trainloader, testloader
