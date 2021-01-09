@@ -21,4 +21,5 @@ In the context of the course FACT in AI at the Universiteit van Amsterdam (UvA),
 * Reinier Bekkenutte - reinier.bekkenutte@student.uva.nl
 
 ## Acknowledgements
+* The U-net implementation for the inversion attack model was adapted from https://github.com/milesial/Pytorch-UNet.
 *TODO: acknowledgements als die er zijn*

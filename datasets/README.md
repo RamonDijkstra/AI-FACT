@@ -1,2 +1,0 @@
-# AI-FACT
-FACT
