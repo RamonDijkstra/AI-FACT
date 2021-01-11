@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 
 
-class Encoder(nn.Module):
+class EncoderGenerator(nn.Module):
 
     def __init__(self, k, size, magnitude):
         """
@@ -41,10 +41,22 @@ class Encoder(nn.Module):
             x[i] = (a + self.b *1j) * torch.exp(1j * self.thetas[i])
         return x
 
+class EncoderDiscriminator(nn.Module):
 
-class Lenet_processing_module(nn.Module):
+    def __init__(self):
+        """
+        """
+        super().__init__()
+        self.sigmoid = torch.Sigmoid()
+
+    def forward(self, x):
+        return self.sigmoid(x.real)
+
+
+class LenetProcessingModule(nn.Module):
     def __init__(self, k):
-        super(Lenet_processing_module, self).__init__()
+        super(LenetProcessingModule, self).__init__()
+
         self.conv2 = ComplexConv2d(6, 16, 3, bias=False)
         # an affine operation: y = Wx + b
         self.fc1 = ComplexLinear(16 * 6 * 6, 120)  # 6*6 from image dimension
@@ -59,9 +71,9 @@ class Lenet_processing_module(nn.Module):
         
         return out
 
-class Lenet_decoder(nn.Module):
+class LenetDecoder(nn.Module):
     def __init__(self):
-        super(Lenet_decoder, self).__init__()
+        super(LenetDecoder, self).__init__()
 
     def forward(self, x):
         pass
@@ -82,9 +94,11 @@ class Discriminator(nn.Module):
 
         return preds
 
-class Lenet_encoder(nn.Module):
+class LenetEncoder(nn.Module):
     def __init__(self, k=4):
-        super(Lenet_encoder, self).__init__()
+
+        super(LenetEncoder, self).__init__()
+
         self.conv1 = nn.Conv2d(3, 6, 3)
         self.k = k
         self.generator = Generator()
