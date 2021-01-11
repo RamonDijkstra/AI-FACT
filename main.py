@@ -2,11 +2,14 @@
 Main python file
 """
 
+#SHOUTOUT NAAR PHILLIPE GEVEN
+
 import argparse
 import os
 
 from models.lenet import *
-from dataloaders.cifar10_loader import load_data 
+from dataloaders.cifar10_loader import load_data
+from models.complex_lenet import *
 
 import torchvision
 import torchvision.transforms as transforms
@@ -18,7 +21,7 @@ import torch.optim as optim
 
 def train(args):
     """
-    Function for training and testing a VAE model.
+    Function for training and testing a NN model.
     Inputs:
         args - Namespace object from the argument parser
     """
@@ -30,10 +33,11 @@ def train(args):
         num_workers=args.num_workers
     )
 
-    net = Net()
+    net = ComplexLenet()
     net = net.to(device)
     
-    criterion = nn.CrossEntropyLoss()
+    #Change to crossentropyloss if you use default lenet
+    criterion = nn.NLLLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
 
     for epoch in range(args.epochs):  # loop over the dataset multiple times
@@ -77,6 +81,8 @@ def train(args):
 
 
 if __name__ == '__main__':
+    #CHECK HYPERPARAMETERS
+
     # Feel free to add more argument parameters
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -95,7 +101,7 @@ if __name__ == '__main__':
     # Optimizer hyperparameters
     parser.add_argument('--lr', default=1e-3, type=float,
                         help='Learning rate to use')
-    parser.add_argument('--batch_size', default=128, type=int,
+    parser.add_argument('--batch_size', default=4, type=int,
                         help='Minibatch size')
 
     # Other hyperparameters
@@ -103,7 +109,7 @@ if __name__ == '__main__':
                         help='Max number of epochs')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results')
-    parser.add_argument('--num_workers', default=4, type=int,
+    parser.add_argument('--num_workers', default=2, type=int,
                         help='Number of workers to use in the data loaders. To have a truly deterministic run, this has to be 0. ' + \
                              'For your assignment report, you can use multiple workers (e.g. 4) and do not have to set it to 0.')
     parser.add_argument('--log_dir', default='VAE_logs', type=str,
