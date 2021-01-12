@@ -87,7 +87,7 @@ class LenetProcessingModule(nn.Module):
         super(LenetProcessingModule, self).__init__()
 
         #self.pool = nn.MaxPool3d(k, 2, 2)
-        #self.pool = nn.MaxPool2d(2, 2)
+        self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5, bias=False)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
@@ -100,11 +100,8 @@ class LenetProcessingModule(nn.Module):
         return torch.norm(x) / torch.max(torch.norm(x), c) * x
 
     def forward(self, x):
-        print(x.shape)
         x = self.complex_relu(x)
-        print(x.shape)
         x = self.pool(x)
-        print(x.shape)
 
         x = self.conv2(x)
         x = self.complex_relu(x)
@@ -128,6 +125,7 @@ class LenetDecoder(nn.Module):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
+        print(x)
         x = self.softmax(x)
 
 class ComplexLenet(nn.Module):

@@ -79,8 +79,8 @@ class LenetEncoder(nn.Module):
         # conv1 is the encoder which maps the input to the feature 
         a = self.conv1(x)
         generated = self.generator(a)
-        out = self.discriminator(a, generated)
-        return out
+        # out = self.discriminator(a, generated)
+        return generated
 
 class LenetProcessingModule(nn.Module):
     def __init__(self, k):
@@ -99,11 +99,10 @@ class LenetProcessingModule(nn.Module):
         return torch.norm(x) / torch.max(torch.norm(x), c) * x
 
     def forward(self, x):
+        print(x)
         print(x.shape)
         x = self.complex_relu(x)
-        print(x.shape)
         x = self.pool(x)
-        print(x.shape)
 
         x = self.conv2(x)
         x = self.complex_relu(x)
@@ -127,6 +126,7 @@ class LenetDecoder(nn.Module):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
+        #Casten naar reals en terugroteren
         x = self.softmax(x)
 
 class ComplexLenet(nn.Module):
