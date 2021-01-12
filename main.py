@@ -33,12 +33,21 @@ def train(args):
         num_workers=args.num_workers
     )
 
-    net = ComplexLenet()
+    net = ComplexLenet(k,device)
     net = net.to(device)
     
     #Change to crossentropyloss if you use default lenet
-    criterion = nn.NLLLoss()
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
+    net_criterion = nn.NLLLoss()
+
+    discriminator_criterion = nn.BCEWithLogitsLoss()
+
+    #Misschien Adam?
+    #Optimizer voor het hele model (min g,Phi,d)
+    model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
+
+    #Optimizer om de discriminator leren (max D)
+    Discriminator_optimizer = optim.SGD(ComplexLenet.encoder.discriminator.parameters(),lr=args.lr, momentum=0.9 )
+
 
     for epoch in range(args.epochs):  # loop over the dataset multiple times
 
@@ -47,12 +56,26 @@ def train(args):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
 
+
+            ### Nadenken over volgorde Loss en optimizen
+
             # zero the parameter gradients
-            optimizer.zero_grad()
+            # Loss discriminator.backward
+            # Step optim discrim (max)
+            # 
+            # zero model_optim gradients
+           	# task loss
+           	# overall loss = task loss -/+ loss discriminator
+           	# overall loss.backward
+           	#step model_optim
+           	outputs,discriminator_outputs = net(inputs)
+
+
+            Discriminator_optimizer.zero_grad()
+            discriminatorLoss = 
+
 
             # forward + backward + optimize
-            outputs = net(inputs)
-            print(outputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
