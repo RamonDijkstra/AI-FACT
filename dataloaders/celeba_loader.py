@@ -22,7 +22,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-def load_data(batch_size, num_workers):
+def load_data(batch_size=128, num_workers=2):
 	'''
     loads the CelebA dataset and splits into
 	train and test sets
