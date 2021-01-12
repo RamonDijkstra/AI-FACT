@@ -9,7 +9,7 @@ import os
 
 from models.lenet import *
 from dataloaders.cifar10_loader import load_data
-from models.complex_lenet import *
+from models.complex_lenet_v2 import *
 
 import torchvision
 import torchvision.transforms as transforms
