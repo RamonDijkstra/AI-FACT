@@ -30,6 +30,8 @@ class EncoderGenerator(nn.Module):
 
         magnitude = torch.norm(a).item()
 
+
+        # = variable for K
         vec = torch.normal(0, 1, size=tuple((a_size[0]*self.k,a_size[1],a_size[2],a_size[3])))
         mag = torch.sqrt(torch.sum(torch.square(vec)).type(torch.FloatTensor))
         res = vec/mag
@@ -40,7 +42,8 @@ class EncoderGenerator(nn.Module):
         thetas = torch.Tensor(self.k*a_size[0]).uniform_(0, np.pi).to(self.device)
  
         ###Set theta for real feature, such that decoder can use it later
-        #Only works for K = 2 
+       
+        #Only works for K = 2 ----- Make variable perhaps
         a = torch.cat([a,a],dim=0)
       
         x = torch.empty(self.k*a_size[0], a_size[1], a_size[2], a_size[3], device=self.device)
@@ -57,18 +60,21 @@ class EncoderGenerator(nn.Module):
 
 class EncoderDiscriminator(nn.Module):
 
-    def __init__(self):
-        """
-        """
-        super().__init__()
-        self.sigmoid = nn.Sigmoid()
+	def __init__(self):
+		"""
+		"""
+		super().__init__()
+		self.linear = nn.Linear(6*28*28,1)
+		self.sigmoid = nn.Sigmoid()
 
-    def forward(self, a, x):
-        x = x.real
-        a = a.reshape(1, a.shape[0], a.shape[1], a.shape[2], a.shape[3])
-        cat = torch.cat((a,x))
-      
-        return self.sigmoid(cat)
+	def forward(self,generated, a):
+		a = a.view(a.shape[0],6*28*28)
+		generated= generated[a.shape[0]:,:,:]
+		generated=generated.real
+		generated = generated.view(generated.shape[0],6*28*28)
+		x = torch.cat((a,generated),dim=0)
+		x = self.linear(x)
+		return self.sigmoid(x).squeeze()
 
 class LenetEncoder(nn.Module):
     def __init__(self, k, device):
@@ -86,43 +92,46 @@ class LenetEncoder(nn.Module):
         # conv1 is the encoder which maps the input to the feature 
         a = self.conv1(x)
         generated, theta = self.generator(a)
-        out = self.discriminator(a, generated)
-        #Roteer a en complexiseer
-        return a,theta,out
+        #Make for variable K
+        labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(a.shape[0])], dim=0)
+
+        #print("Lables",labels)
+
+
+        out = self.discriminator(generated,a)
+        return generated[:a.shape[0],:,:,:] ,theta,out, labels
 
 class LenetProcessingModule(nn.Module):
-    def __init__(self):
+    def __init__(self, device):
         super(LenetProcessingModule, self).__init__()
 
-        self.pool = nn.MaxPool2d(2, 2)
+        self.device = device
+        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
         self.conv2 = nn.Conv2d(6, 16, 5, bias=False)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
-    def complex_relu(x):
-	    #Zou dit werken? Sowieso
-	    c = torch.ones(x.shape, device=self.device)
-	    return torch.linalg.norm(x, float('inf')) / torch.max(torch.linalg.norm(x, float('inf')), c) * x
+   
     
     def forward(self, x):
         #print(x.shape)
-        x = complex_relu(x)
+        x = complex_relu(x,self.device)
         #print(x.shape)
-        x = self.pool(x)
+        indices = complex_max_pool(x,self.pool)
         #print(x.shape)
-
+        x = x[indices]
         x = self.conv2(x)
-        x = complex_relu(x)
+        x = complex_relu(x,self.device)
         x = self.pool(x)
 
         x = x.view(-1, 16 * 5 * 5)
 
         x = self.fc1(x)
-        x = complex_relu(x)
+        x = complex_relu(x,self.device)
 
         x = self.fc2(x)
-        x = complex_relu(x)
+        x = complex_relu(x,self.device)
 
         x = self.fc3(x)
         
@@ -149,14 +158,14 @@ class ComplexLenet(nn.Module):
         self.device = device
 
         self.encoder = LenetEncoder(k, self.device)
-        self.proccessing_module = LenetProcessingModule()
+        self.proccessing_module = LenetProcessingModule(self.device)
         self.decoder = LenetDecoder()
 
     def forward(self, x):
         #x is an image batch
-        x, theta, discriminator_logits = self.encoder(x)
-        x = self.proccessing_module(x)
-        x = self.decoder(x, theta)
+        x, theta, discriminator_logits, labels = self.encoder(x)
+        #x = self.proccessing_module(x)
+        #x = self.decoder(x, theta)
 
-        return x, discriminator_logits
+        return x, discriminator_logits, labels
 

@@ -62,18 +62,27 @@ def train(args):
     model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
 
     #Optimizer om de discriminator leren (max D)
-    Discriminator_optimizer = optim.SGD(net.encoder.parameters(),lr=args.lr, momentum=0.9)
+    Discriminator_optimizer = optim.SGD(net.encoder.discriminator.parameters(),lr=args.lr, momentum=0.9)
 
 
     for epoch in range(args.epochs):  # loop over the dataset multiple times
 
         running_loss = 0.0
+        discrim_running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
-            outputs, discriminator_outputs = net(inputs)
+            outputs, discriminator_outputs, discrim_labels = net(inputs)
+            discriminator_outputs, discrim_labels = discriminator_outputs.to(device), discrim_labels.to(device)
+            print(discriminator_outputs)
             Discriminator_optimizer.zero_grad()
-            
+
+            discrim_loss = discriminator_criterion(discriminator_outputs,discrim_labels)
+            discrim_loss.backward()
+
+            Discriminator_optimizer.step()
+
+            #print(discrim_loss.item())
 
 
             ### Nadenken over volgorde Loss en optimizen
@@ -86,26 +95,21 @@ def train(args):
            	# task loss
            	# overall loss = task loss -/+ loss discriminator
            	# overall loss.backward
-           	#step model_optim
-
-
-
-            #targets
-            discriminatorLoss = discriminator_criterion()
-
+           	#step model_opti
 
             # forward + backward + optimize
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            #loss = criterion(outputs, labels)
+            #loss.backward()
+            #optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
-            	print('[%d, %5d] loss: %.3f' %
-            	(epoch + 1, i + 1, running_loss / 2000))
-            	running_loss = 0.0
-
+            discrim_running_loss += discrim_loss.item()
+            print(discrim_loss.item())
+            #running_loss += loss.item()
+            #if i % 2000 == 1999:    # print every 2000 mini-batches
+            	#print('[%d, %5d] loss: %.3f' %
+            	#(epoch + 1, i + 1, running_loss / 2000))
+            	
     print('Finished Training')
 
     correct = 0
