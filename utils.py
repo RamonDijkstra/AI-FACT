@@ -17,6 +17,7 @@
 """
 Utility functions
 """
+
 import torch
 #import torch.linalg#
 import torch.nn as nn
