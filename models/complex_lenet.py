@@ -11,52 +11,49 @@ import numpy as np
 
 class EncoderGenerator(nn.Module):
 
-    def __init__(self, k):
+    def __init__(self, k, device):
         """
         """
         super().__init__()
 
         # k - 1 features will be generated
         self.k = k
+        self.device = device
 
     def forward(self, a):
         """
         """
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # We use the feature to generate k - 1 fake features
-        a_size = a.shape
-        magnitude = torch.norm(a)
 
-        # b is normalized to have same magnitude as a
+        a_size = a.shape # features after convolution
 
-        b = torch.randn(a_size, device=device)
-        divider = torch.norm(b) / magnitude
-        b = b / divider
+        magnitude = torch.norm(a).item()
 
-        # Tensor of angles that rotate real feature, sampled from uniform
-        # distribution between 0 and pi (excluding 0 itself)
-        thetas = torch.cuda.FloatTensor(self.k-1).uniform_(0, np.pi)
+        vec = torch.normal(0, 1, size=tuple((a_size[0]*self.k,a_size[1],a_size[2],a_size[3])))
+        mag = torch.sqrt(torch.sum(torch.square(vec)).type(torch.FloatTensor))
+        res = vec/mag
+        b = res*magnitude
+        b = b.to(self.device)
 
 
-        ###Set theta and b for real feature, such that decoder can use it later
-        #theta ===
-        #b ===
+        thetas = torch.Tensor(self.k*a_size[0]).uniform_(0, np.pi).to(self.device)
+ 
+        ###Set theta for real feature, such that decoder can use it later
+        #Only works for K = 2 
+        a = torch.cat([a,a],dim=0)
+      
+        x = torch.empty(self.k*a_size[0], a_size[1], a_size[2], a_size[3], device=self.device)
 
-
-
-        # Do we also add the real feature (i.e. a) to x ..?
-        x = torch.empty(self.k, a_size[0], a_size[1], a_size[2], a_size[3], dtype=torch.cfloat, device=device)
-        a = a.cpu()
-        b = b.cpu()
         thetas = thetas.cpu()
-        for i in range(0, self.k-1):
-            x[i] = (a + b *1j) * torch.exp(1j * thetas[i])
+        thetas = (1j * thetas).exp()
+        thetas = thetas.to(self.device)
 
-        a = a.to(device)
-        b = b.to(device)
-        thetas = thetas.to(device)
-        return x, thetas
+
+        thetas = thetas.reshape(self.k*a_size[0],1,1,1)
+
+        x = (a + b *1j) * thetas
+        return x, thetas[:a_size[0]].real.squeeze()
 
 class EncoderDiscriminator(nn.Module):
 
@@ -74,7 +71,7 @@ class EncoderDiscriminator(nn.Module):
         return self.sigmoid(cat)
 
 class LenetEncoder(nn.Module):
-    def __init__(self, k):
+    def __init__(self, k, device):
 
         super(LenetEncoder, self).__init__()
 
@@ -82,7 +79,7 @@ class LenetEncoder(nn.Module):
 
         ###Moet anders: Generator en discriminator optimaliseren op GAN manier, om zo de Conv weights te leren, daarna batch door conv halen
         ### roteren en complexiseren
-        self.generator = EncoderGenerator(k)
+        self.generator = EncoderGenerator(k, device)
         self.discriminator = EncoderDiscriminator()
 
     def forward(self, x):
@@ -138,21 +135,20 @@ class LenetDecoder(nn.Module):
         self.softmax = nn.Softmax()
 
     def forward(self, x, theta):
-
     	#Eerst terug roteren, dan .real dan softmax
     	x = x * torch.exp(-1j * theta)
     	x = x.real
-    	
-        x = self.softmax(x)
-       	return x
+    	x = self.softmax(x)
+
+    	return x
 
 class ComplexLenet(nn.Module):
-    def __init__(self, k=5, device):
+    def __init__(self, device, k=5 ):
         super(ComplexLenet, self).__init__()
 
         self.device = device
 
-        self.encoder = LenetEncoder(k)
+        self.encoder = LenetEncoder(k, self.device)
         self.proccessing_module = LenetProcessingModule()
         self.decoder = LenetDecoder()
 

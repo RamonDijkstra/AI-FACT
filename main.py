@@ -49,7 +49,7 @@ def train(args):
         num_workers=args.num_workers
     )
 
-    net = ComplexLenet(k,device)
+    net = ComplexLenet(device,2)
     net = net.to(device)
     
     #Change to crossentropyloss if you use default lenet
@@ -62,7 +62,7 @@ def train(args):
     model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
 
     #Optimizer om de discriminator leren (max D)
-    Discriminator_optimizer = optim.SGD(ComplexLenet.encoder.discriminator.parameters(),lr=args.lr, momentum=0.9 )
+    Discriminator_optimizer = optim.SGD(net.encoder.parameters(),lr=args.lr, momentum=0.9)
 
 
     for epoch in range(args.epochs):  # loop over the dataset multiple times
@@ -71,6 +71,9 @@ def train(args):
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
+            outputs, discriminator_outputs = net(inputs)
+            Discriminator_optimizer.zero_grad()
+            
 
 
             ### Nadenken over volgorde Loss en optimizen
@@ -84,11 +87,11 @@ def train(args):
            	# overall loss = task loss -/+ loss discriminator
            	# overall loss.backward
            	#step model_optim
-           	outputs,discriminator_outputs = net(inputs)
 
 
-            Discriminator_optimizer.zero_grad()
-            discriminatorLoss = 
+
+            #targets
+            discriminatorLoss = discriminator_criterion()
 
 
             # forward + backward + optimize
@@ -99,9 +102,9 @@ def train(args):
             # print statistics
             running_loss += loss.item()
             if i % 2000 == 1999:    # print every 2000 mini-batches
-                print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, running_loss / 2000))
-                running_loss = 0.0
+            	print('[%d, %5d] loss: %.3f' %
+            	(epoch + 1, i + 1, running_loss / 2000))
+            	running_loss = 0.0
 
     print('Finished Training')
 
