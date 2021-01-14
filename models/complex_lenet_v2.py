@@ -69,24 +69,28 @@ class LenetEncoder(nn.Module):
         
         # apply the first convolutional layer of the LeNet model 
         convolved_images = self.conv1(image_batch)
-        
-        # encode the convolved images using the generator
-        encoded_images, thetas = self.generator(convolved_images)
-        
-        # generate the labels for the encoded images
-        # TODO: make this depend on K and shuffle the features
-        labels = torch.cat([torch.ones(encoded_images.shape[0]),torch.zeros(encoded_images.shape[0])], dim=0)
 
         # check if training
         if training:
+            # encode the convolved images using the generator
+            a, x, thetas, fake_x, delta_thetas = self.generator(convolved_images)
+            
+            # create a batch of real feature and encoded fake features
+            # TODO: shuffle the real and fake features
+            real_and_fake_images = torch.cat([a, fake_x], dim=0)
+            labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(fake_x.shape[0])], dim=0)           
+        
             # predict the labels using the discriminator
-            discriminator_predictions = self.discriminator(encoded_images)
+            discriminator_predictions = self.discriminator(real_and_fake_images)
             
             # return the real encoded images, thetas, discriminator predictions and labels
-            return generated[:a.shape[0],:,:,:], thetas, out, labels
+            return x, thetas, discriminator_predictions, labels
         else:
-            # return the real encoded images, thetas and labels
-            return generated[:a.shape[0],:,:,:], thetas, labels
+            # encode the convolved images using the generator
+            x, thetas = self.generator(convolved_images)
+        
+            # return the real encoded images and thetas
+            return x, thetas
 
 class EncoderGenerator(nn.Module):
     """
@@ -108,10 +112,10 @@ class EncoderGenerator(nn.Module):
         self.k = k
         self.device = device
 
-    def forward(self, image_batch, training=True):
+    def forward(self, a, training=True):
         """
         Inputs:
-            image_batch - Input batch of images. Shape: [B, ?, ?, ?]
+            a - Input batch of convolved images. Shape: [B, ?, ?, ?]
         Outputs:
 			reconstructed_image - Generated original image of shape 
 				[B,image_shape[0],image_shape[1],image_shape[2]]
@@ -121,15 +125,18 @@ class EncoderGenerator(nn.Module):
         """
 
         # save the image dimensions for later use
-        image_dimensions = image_batch.shape
-
+        image_dimensions = a.shape
+        
+        # a is the real convolved images
+        a = a
+        
         # compute the magnitude of the image batch
-        batch_magnitude = torch.norm(image_batch).item()
+        a_magnitude = torch.norm(a).item()
 
         # create real obfuscating features b
         b = torch.normal(0, 1, size=tuple((image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
         b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
-        b = (b / b_magnitude)* batch_magnitude
+        b = (b / b_magnitude)* a_magnitude
         b = b.to(self.device)
 
         # sample angles to rotate the features for the real rotation
@@ -148,7 +155,7 @@ class EncoderGenerator(nn.Module):
             # create fake obfuscating features b
             fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
             fake_b_magnitude = torch.sqrt(torch.sum(torch.square(fake_b)).type(torch.FloatTensor))
-            fake_b = (fake_b / fake_b_magnitude)* batch_magnitude
+            fake_b = (fake_b / fake_b_magnitude)* a_magnitude
             fake_b = fake_b.to(self.device)
         
             # sample k-1 delta angles to rotate the features for fake examples
@@ -162,8 +169,8 @@ class EncoderGenerator(nn.Module):
             fake_x = (a + fake_b *1j) * fake_thetas
             fake_x = fake_x.to(self.device)
             
-            # return the real encoded features, thetas, fake encoded features and delta thetas
-            return x, thetas, fake_x, delta_thetas
+            # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
+            return a, x, thetas, fake_x, delta_thetas
         else:
             # return the real encoded features and thetas
             return x, thetas
@@ -194,13 +201,14 @@ class EncoderDiscriminator(nn.Module):
 	def forward(self,generated, a):
         """
         Inputs:
-            image_batch - Input batch of images. Shape: [B, ?, ?, ?]
+            image_batch - Input batch of encoded images. Shape: [B, ?, ?, ?]
             training - Boolean value. 
                 True when training
                 False when using in application
         Outputs:
-			reconstructed_image - Generated original image of shape 
-				[B,image_shape[0],image_shape[1],image_shape[2]]
+			predictions - Predictions for real and fake images. Shape: [B, 1]
+                1 when real encoded image
+                0 when fake encoded image
         """
         
 		a = a.view(a.shape[0],6*28*28)
