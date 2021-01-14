@@ -115,8 +115,6 @@ class LenetEncoder(nn.Module):
         #Make for variable K
         labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(a.shape[0])], dim=0)
 
-        #print("Lables",labels)
-
 
         out = self.discriminator(generated,a)
         return generated[:a.shape[0],:,:,:] ,theta,out, labels
@@ -135,11 +133,8 @@ class LenetProcessingModule(nn.Module):
    
     
     def forward(self, x):
-        #print(x.shape)
         x = complex_relu(x,self.device)
-        #print(x.shape)
         indices = complex_max_pool(x,self.pool)
-        #print(x.shape)
         x = x[indices]
         x = self.conv2(x)
         x = complex_relu(x,self.device)
@@ -184,8 +179,8 @@ class ComplexLenet(nn.Module):
     def forward(self, x):
         #x is an image batch
         x, theta, discriminator_logits, labels = self.encoder(x)
-        #x = self.proccessing_module(x)
-        #x = self.decoder(x, theta)
+        x = self.proccessing_module(x)
+        x = self.decoder(x, theta)
 
         return x, discriminator_logits, labels
 

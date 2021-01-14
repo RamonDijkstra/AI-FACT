@@ -74,16 +74,22 @@ class LenetEncoder(nn.Module):
         # check if training
         if training:
             # encode the convolved images using the generator
-            a, x, thetas, fake_x, delta_thetas = self.generator(convolved_images)
+            with torch.no_grad():
+                a, x, thetas, fake_x, delta_thetas = self.generator(convolved_images)
             
             # create a batch of real feature and encoded fake features
-            # TODO: shuffle the real and fake features
             real_and_fake_images = torch.cat([a, fake_x], dim=0)
-            labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(fake_x.shape[0])], dim=0)           
-        
+            labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(fake_x.shape[0])], dim=0)
+            
+            # TODO: shuffle the real and fake features
+            # idx = torch.randperm(real_and_fake_images.shape[0])
+            # shuffled_images = real_and_fake_images.view(-1)[idx].view(real_and_fake_images.size()[0])
+            # shuffled_labels = labels.view(-1)[idx].view(labels.size()[0])
+            # print(shuffled_images, shuffled_labels)
+
             # predict the labels using the discriminator
             discriminator_predictions = self.discriminator(real_and_fake_images)
-            
+
             # return the real encoded images, thetas, discriminator predictions and labels
             return x, thetas, discriminator_predictions, labels
         else:
@@ -143,13 +149,13 @@ class EncoderGenerator(nn.Module):
         # sample angles to rotate the features for the real rotation
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
         thetas = thetas.cpu()
-        #thetas = (1j * thetas).exp()
-        thetas = thetas.exp()
+        thetas = (1j * thetas).exp()
+        # thetas = thetas.exp()
         thetas = thetas.to(self.device)
         
         # compute encoded real feature
-        #x = (a + b *1j) * thetas
-        x = (a + b) * thetas
+        x = (a + b *1j) * thetas
+        # x = (a + b) * thetas
         x = x.to(self.device)
         
         # check if training
@@ -163,15 +169,16 @@ class EncoderGenerator(nn.Module):
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
             delta_thetas = delta_thetas.cpu()
-            #delta_thetas = (1j * delta_thetas).exp()
-            delta_thetas = delta_thetas.exp()
+            delta_thetas = (1j * delta_thetas).exp()
+            # delta_thetas = delta_thetas.exp()
             delta_thetas = delta_thetas.to(self.device)
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
-            #fake_x = (a + fake_b *1j) * delta_thetas
-            fake_x = (a + fake_b) * delta_thetas
+            fake_x = (a + fake_b *1j) * delta_thetas
+            # fake_x = (a + fake_b) * delta_thetas
             fake_x = fake_x.to(self.device)
+            fake_x = fake_x.real
             
             # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
             return a, x, thetas, fake_x, delta_thetas
@@ -216,7 +223,7 @@ class EncoderDiscriminator(nn.Module):
         
         # reshape the batch and get real values
         encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28)
-        #encoded_batch = encoded_batch.real
+        # encoded_batch = encoded_batch.real
         
         # prediction the labels
         predictions = self.linear(encoded_batch)
@@ -232,12 +239,11 @@ class LenetProcessingModule(nn.Module):
 
         self.device = device
         self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        self.conv2 = nn.Conv2d(6, 16, 5, bias=False)
+        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)
+        self.conv2_real = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
-
-   
     
     def forward(self, x):
         #print(x.shape)
@@ -246,7 +252,8 @@ class LenetProcessingModule(nn.Module):
         indices = complex_max_pool(x,self.pool)
         #print(x.shape)
         x = x[indices]
-        x = self.conv2(x)
+        # Split x in real and imaginary part
+        x_real, x_imag = self.complex_conv(x, conv2_imag, conv2_real)
         x = complex_relu(x,self.device)
         x = self.pool(x)
 
