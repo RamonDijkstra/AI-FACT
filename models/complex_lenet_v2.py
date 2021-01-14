@@ -27,6 +27,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np
+from utils import *
 
 class LenetEncoder(nn.Module):
     """
@@ -288,7 +289,7 @@ class ComplexLenet(nn.Module):
     def forward(self, x):
         #x is an image batch
         x, theta, discriminator_logits, labels = self.encoder(x)
-        #x = self.proccessing_module(x)
-        #x = self.decoder(x, theta)
+        x = self.proccessing_module(x)
+        x = self.decoder(x, theta)
 
         return x, discriminator_logits, labels
