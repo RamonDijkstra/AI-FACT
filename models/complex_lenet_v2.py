@@ -108,13 +108,16 @@ class EncoderGenerator(nn.Module):
         self.k = k
         self.device = device
 
-    def forward(self, image_batch):
+    def forward(self, image_batch, training=True):
         """
         Inputs:
             image_batch - Input batch of images. Shape: [B, ?, ?, ?]
         Outputs:
 			reconstructed_image - Generated original image of shape 
 				[B,image_shape[0],image_shape[1],image_shape[2]]
+            training - Boolean value. 
+                True when training
+                False when using in application
         """
 
         # save the image dimensions for later use
@@ -123,25 +126,47 @@ class EncoderGenerator(nn.Module):
         # compute the magnitude of the image batch
         batch_magnitude = torch.norm(image_batch).item()
 
-        # create k (number of) obfuscating features b
+        # create real obfuscating features b
         b = torch.normal(0, 1, size=tuple((image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
         b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
         b = (b / b_magnitude)* batch_magnitude
         b = b.to(self.device)
 
-        # sample angles to rotate the features
+        # sample angles to rotate the features for the real rotation
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
         thetas = thetas.cpu()
         thetas = (1j * thetas).exp()
         thetas = thetas.to(self.device)
         # thetas = thetas.reshape(self.k*a_size[0],1,1,1)
         
-        # compute new encoded feature x
+        # compute encoded real feature
         x = (a + b *1j) * thetas
         x = x.to(self.device)
         
-        # return the encoded features and thetas
-        return x, thetas
+        # check if training
+        if training:      
+            # create fake obfuscating features b
+            fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
+            fake_b_magnitude = torch.sqrt(torch.sum(torch.square(fake_b)).type(torch.FloatTensor))
+            fake_b = (fake_b / fake_b_magnitude)* batch_magnitude
+            fake_b = fake_b.to(self.device)
+        
+            # sample k-1 delta angles to rotate the features for fake examples
+            delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
+            delta_thetas = delta_thetas.cpu()
+            delta_thetas = (1j * delta_thetas).exp()
+            delta_thetas = delta_thetas.to(self.device)
+        
+            # compute encoded fake features
+            fake_a = torch.cat([a]*(self.k-1),dim=0)
+            fake_x = (a + fake_b *1j) * fake_thetas
+            fake_x = fake_x.to(self.device)
+            
+            # return the real encoded features, thetas, fake encoded features and delta thetas
+            return x, thetas, fake_x, delta_thetas
+        else:
+            # return the real encoded features and thetas
+            return x, thetas
 
 class EncoderDiscriminator(nn.Module):
     """
