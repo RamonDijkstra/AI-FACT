@@ -25,7 +25,7 @@ import os
 
 from models.lenet import *
 from dataloaders.cifar10_loader import load_data
-from models.complex_lenet import *
+from models.complex_lenet_v2 import *
 
 import torchvision
 import torchvision.transforms as transforms
@@ -34,6 +34,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+# def discriminator_step(self, net, x_real):
+#     a = net.encoder.generator.forward()
+
+
+
 
 def train(args):
     """
@@ -70,14 +76,20 @@ def train(args):
         running_loss = 0.0
         discrim_running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
+            torch.autograd.set_detect_anomaly(True)
+            #Minimize the GAN to fool the attacker while minimizing the output difference (Crossentropy)
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
+            
             outputs, discriminator_outputs, discrim_labels = net(inputs)
             discriminator_outputs, discrim_labels = discriminator_outputs.to(device), discrim_labels.to(device)
-            print(discriminator_outputs)
+            discrim_labels = discrim_labels.reshape((discrim_labels.shape[0], 1))
+
+            print(discriminator_outputs.type())
+
             Discriminator_optimizer.zero_grad()
 
-            discrim_loss = discriminator_criterion(discriminator_outputs,discrim_labels)
+            discrim_loss = discriminator_criterion(discriminator_outputs, discrim_labels)
             discrim_loss.backward()
 
             Discriminator_optimizer.step()
