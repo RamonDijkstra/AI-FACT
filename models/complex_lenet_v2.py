@@ -36,11 +36,11 @@ class LenetEncoder(nn.Module):
 
     def __init__(self, k, device):
         """
-        Encoder model of the network
+        Encoder module of the network
 
         Inputs:
-            k - Number of fake features to generate in order to
-                obscure the real features.
+            k - Level of anonimity. k-1 fake features are generated
+                to obscure the real feature.
             device - PyTorch device used to run the model on.
         """
         super(LenetEncoder, self).__init__()
@@ -59,13 +59,19 @@ class LenetEncoder(nn.Module):
     def forward(self, image_batch, training=True):
         """
         Inputs:
-            image_batch - Input batch of images. Shape: [B, ?, ?, ?]
-            training - Boolean value. 
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
                 True when training
                 False when using in application
         Outputs:
-			reconstructed_image - Generated original image of shape 
-				[B,image_shape[0],image_shape[1],image_shape[2]]
+            x - Real encoded feature. Shape: [B, C, W, H]
+            thetas - Angles used for rotating the real feature. Shape: [B, 1, 1, 1]
+            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+            labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
         
         # apply the first convolutional layer of the LeNet model 
@@ -79,14 +85,12 @@ class LenetEncoder(nn.Module):
             
             # create a batch of real feature and encoded fake features
             real_and_fake_images = torch.cat([a, fake_x], dim=0)
-            labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(fake_x.shape[0])], dim=0)
             
-            # TODO: shuffle the real and fake features
-            # idx = torch.randperm(real_and_fake_images.shape[0])
-            # shuffled_images = real_and_fake_images.view(-1)[idx].view(real_and_fake_images.size()[0])
-            # shuffled_labels = labels.view(-1)[idx].view(labels.size()[0])
-            # print(shuffled_images, shuffled_labels)
-
+            # create the labels for the batch
+            # 1 if real, 0 if fake
+            labels = torch.cat([torch.ones(a.shape[0]),torch.zeros(fake_x.shape[0])], dim=0)
+            labels = labels.reshape(labels.shape[0], 1)
+            
             # predict the labels using the discriminator
             discriminator_predictions = self.discriminator(real_and_fake_images)
 
@@ -109,8 +113,8 @@ class EncoderGenerator(nn.Module):
         Generator model of the encoder
 
         Inputs:
-            k - Number of fake features to generate in order to
-                obscure the real features.
+            k - Level of anonimity. k-1 fake features are generated
+                to obscure the real feature.
             device - PyTorch device used to run the model on.
         """
         super().__init__()
@@ -122,20 +126,24 @@ class EncoderGenerator(nn.Module):
     def forward(self, a, training=True):
         """
         Inputs:
-            a - Input batch of convolved images. Shape: [B, ?, ?, ?]
-        Outputs:
-			reconstructed_image - Generated original image of shape 
-				[B,image_shape[0],image_shape[1],image_shape[2]]
-            training - Boolean value. 
+            a - Input batch of convolved images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
                 True when training
                 False when using in application
+        Outputs:
+            a - Real non-encoded feature. Shape: [B, C, W, H]
+            x - Real encoded feature. Shape: [B, C, W, H]
+            thetas - Angles used for rotating the real feature. Shape: [B, 1, 1, 1]
+            fake_x - Fake generated features. Shape: [B * k-1, C, W, H]
+            delta_thetas - Angles used for rotating the fake features. Shape: [B * k-1, 1, 1, 1]
         """
 
         # save the image dimensions for later use
         image_dimensions = a.shape
-        
-        # a is the real convolved images
-        a = a
         
         # compute the magnitude of the image batch
         a_magnitude = torch.norm(a).item()
@@ -150,12 +158,10 @@ class EncoderGenerator(nn.Module):
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
         thetas = thetas.cpu()
         thetas = (1j * thetas).exp()
-        # thetas = thetas.exp()
         thetas = thetas.to(self.device)
         
         # compute encoded real feature
         x = (a + b *1j) * thetas
-        # x = (a + b) * thetas
         x = x.to(self.device)
         
         # check if training
@@ -170,13 +176,11 @@ class EncoderGenerator(nn.Module):
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
             delta_thetas = delta_thetas.cpu()
             delta_thetas = (1j * delta_thetas).exp()
-            # delta_thetas = delta_thetas.exp()
             delta_thetas = delta_thetas.to(self.device)
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
             fake_x = (a + fake_b *1j) * delta_thetas
-            # fake_x = (a + fake_b) * delta_thetas
             fake_x = fake_x.to(self.device)
             fake_x = fake_x.real
             
@@ -193,14 +197,8 @@ class EncoderDiscriminator(nn.Module):
     def __init__(self, device):
         """
         Discriminator model of the encoder
-
-        Inputs:
-            device - PyTorch device used to run the model on.
         """
         super().__init__()
-        
-        # save the inputs
-        self.device = device
         
         # initialize the linear layer
         self.linear = nn.Linear(6*28*28,1)
@@ -211,33 +209,45 @@ class EncoderDiscriminator(nn.Module):
     def forward(self, encoded_batch):
         """
         Inputs:
-            image_batch - Input batch of encoded images. Shape: [B, ?, ?, ?]
-            training - Boolean value. 
-                True when training
-                False when using in application
+            encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
         Outputs:
-			predictions - Predictions for real and fake images. Shape: [B, 1]
-                1 when real encoded image
-                0 when fake encoded image
+			predictions - Predictions for real and fake feature. Shape: [B, 1]
+                1 when real feature
+                0 when fake feature
         """
         
-        # reshape the batch and get real values
+        # reshape the batch
         encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28)
-        # encoded_batch = encoded_batch.real
         
-        # prediction the labels
+        # predict the labels
         predictions = self.linear(encoded_batch)
         predictions = self.sigmoid(predictions)
         
         # return the predictions
         return predictions
  
-# ------ OLD ------
 class LenetProcessingModule(nn.Module):
+    """
+	LeNet processing module model
+	"""
+    
     def __init__(self, device):
-        super(LenetProcessingModule, self).__init__()
+        """
+        Processing module of the network
 
+        Inputs:
+            device - PyTorch device used to run the model on.
+        """
+        super(LenetProcessingModule, self).__init__()
+        
+        # save the inputs
         self.device = device
+        
+        # initialize the layers of the LeNet model
         self.pool = nn.MaxPool2d(2, 2, return_indices=True)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_real = nn.Conv2d(6, 16, 5)
@@ -245,8 +255,25 @@ class LenetProcessingModule(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
     
-    def forward(self, x):
-        #print(x.shape)
+    def forward(self, encoded_batch):
+        """
+        Inputs:
+            encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+        Outputs:
+			processed_batch - Output batch of further processed features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+        """
+        
+        # transform the encoded features using the model layers
+        # TODO: make this work
+        
         x = complex_relu(x,self.device)
         #print(x.shape)
         indices = complex_max_pool(x,self.pool)
@@ -270,33 +297,116 @@ class LenetProcessingModule(nn.Module):
         return x
 
 class LenetDecoder(nn.Module):
+    """
+	LeNet decoder model
+	"""
+    
     def __init__(self):
+        """
+        Decoder module of the network
+        """
         super(LenetDecoder, self).__init__()
 
+        # initialize the softmax layer
         self.softmax = nn.Softmax()
 
-    def forward(self, x, theta):
-    	#Eerst terug roteren, dan .real dan softmax
-    	x = x * torch.exp(-1j * theta)
-    	x = x.real
-    	x = self.softmax(x)
-
-    	return x
+    def forward(self, encoded_batch, thetas):
+        """
+        Inputs:
+            encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+            thetas - Angles used for rotating the real feature. Shape: [B, 1, 1, 1]
+        Outputs:
+			decoded_batch - Output batch of decoded features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+        """
+        
+    	# rotate the features back to their original state
+    	decoded_batch = encoded_batch * torch.exp(-1j * thetas)
+        
+        # get rid of the imaginary part of the complex features
+    	decoded_batch = decoded_batch.real
+        
+        # apply the softmax layer
+    	decoded_batch = self.softmax(decoded_batch)
+        
+        # return the decoded batch
+    	return decoded_batch
 
 class ComplexLenet(nn.Module):
-    def __init__(self, device, k=5 ):
+    """
+	Complex LeNet model
+	"""
+    
+    def __init__(self, device, k=2):
+        """
+        Complex LeNet network
+
+        Inputs:
+            device - PyTorch device used to run the model on.
+            k - Level of anonimity. k-1 fake features are generated
+                to obscure the real feature. Default = 2
+        """
         super(ComplexLenet, self).__init__()
 
+        # save the inputs
         self.device = device
+        self.k = k
 
-        self.encoder = LenetEncoder(k, self.device)
+        # initialize the different modules of the network
+        self.encoder = LenetEncoder(self.k, self.device)
         self.proccessing_module = LenetProcessingModule(self.device)
         self.decoder = LenetDecoder()
 
-    def forward(self, x):
-        #x is an image batch
-        x, theta, discriminator_logits, labels = self.encoder(x)
-        x = self.proccessing_module(x)
-        x = self.decoder(x, theta)
-
-        return x, discriminator_logits, labels
+    def forward(self, image_batch, training=True):
+        """
+        Inputs:
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
+                True when training
+                False when using in application
+        Outputs:
+			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+            labels - Real labels of the encoded features. Shape: [B * k, 1]
+        """
+        
+        # check if training
+        if training:
+            # run the image batch through the encoder (generator and discriminator)
+            x, thetas, discriminator_predictions, labels = self.encoder(image_batch)
+            
+            # send the encoded feature to the processing unit
+            #x = self.proccessing_module(x)
+            
+            # decode the feature from
+            #x = self.decoder(x, theta)
+            
+            # return the decoded feature, discriminator predictions and real labels
+            return x, discriminator_predictions, labels
+        else:
+            # run the image batch through the encoder (only generator)
+            x, thetas = self.encoder(image_batch)
+            
+            # send the encoded feature to the processing unit
+            #x = self.proccessing_module(x)
+            
+            # decode the feature from
+            #x = self.decoder(x, theta)
+            
+            # return the decoded feature 
+            return x

@@ -83,7 +83,6 @@ def train(args):
             discriminator_outputs, discrim_labels = discriminator_outputs.to(device), discrim_labels.to(device)
             Discriminator_optimizer.zero_grad()
 
-            discrim_labels = discrim_labels.reshape(discrim_labels.shape[0], 1)
             discrim_loss = discriminator_criterion(discriminator_outputs,discrim_labels)
             discrim_loss.backward()
 
@@ -95,16 +94,16 @@ def train(args):
 
             #print(discrim_loss.item())
             
-            model_optimizer.zero_grad()
-            task_loss = net_criterion(outputs, labels)
-            task_loss.backward()
-            model_optimizer.step()
+            #model_optimizer.zero_grad()
+            #task_loss = net_criterion(outputs, labels)
+            #task_loss.backward()
+            #model_optimizer.step()
 
 
-            model_optimizer.zero_grad()
-            task_loss = net_criterion(outputs, labels)
-            task_loss.backward()
-            model_optimizer.step()
+            #model_optimizer.zero_grad()
+            #task_loss = net_criterion(outputs, labels)
+            #task_loss.backward()
+            #model_optimizer.step()
 
             ### Nadenken over volgorde Loss en optimizen
 
@@ -132,9 +131,9 @@ def train(args):
             	#(epoch + 1, i + 1, running_loss / 2000))\
                 
             discriminator_loss_value = discrim_loss.item()
-            task_loss_value = task_loss.item()
+            #task_loss_value = task_loss.item()
         print('epoch {} disc loss: {}'.format(epoch + 1, discriminator_loss_value))
-        print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
+        #print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
             	
     print('Finished Training')
     
@@ -183,11 +182,7 @@ if __name__ == '__main__':
                         help='Minibatch size')
 
     # Other hyperparameters
-<<<<<<< HEAD
-    parser.add_argument('--epochs', default=5, type=int,
-=======
-    parser.add_argument('--epochs', default=2, type=int,
->>>>>>> eccb33df875373f2b2966ab8c97d41fb44302eaf
+    parser.add_argument('--epochs', default=20, type=int,
                         help='Max number of epochs')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results')

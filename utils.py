@@ -25,10 +25,9 @@ import torch.nn.functional as F
 import numpy as np
 
 def complex_conv(x_real, x_imag, conv_real, conv_img):
-	real_out = conv_real(x_real) - conv_imag(x_imag)
+    real_out = conv_real(x_real) - conv_imag(x_imag)
     imag_out = conv_real(x_imag) + conv_imag(x_real)
     return real_out, imag_out
-
 
 def complex_relu(x,device):
     #Zou dit werken? Sowieso
