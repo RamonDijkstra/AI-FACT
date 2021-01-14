@@ -142,12 +142,13 @@ class EncoderGenerator(nn.Module):
         # sample angles to rotate the features for the real rotation
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
         thetas = thetas.cpu()
-        thetas = (1j * thetas).exp()
+        #thetas = (1j * thetas).exp()
+        thetas = thetas.exp()
         thetas = thetas.to(self.device)
-        # thetas = thetas.reshape(self.k*a_size[0],1,1,1)
         
         # compute encoded real feature
-        x = (a + b *1j) * thetas
+        #x = (a + b *1j) * thetas
+        x = (a + b) * thetas
         x = x.to(self.device)
         
         # check if training
@@ -161,12 +162,14 @@ class EncoderGenerator(nn.Module):
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
             delta_thetas = delta_thetas.cpu()
-            delta_thetas = (1j * delta_thetas).exp()
+            #delta_thetas = (1j * delta_thetas).exp()
+            delta_thetas = delta_thetas.exp()
             delta_thetas = delta_thetas.to(self.device)
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
-            fake_x = (a + fake_b *1j) * fake_thetas
+            #fake_x = (a + fake_b *1j) * delta_thetas
+            fake_x = (a + fake_b) * delta_thetas
             fake_x = fake_x.to(self.device)
             
             # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
@@ -179,26 +182,25 @@ class EncoderDiscriminator(nn.Module):
     """
 	Discriminator part of the LeNet encoder model
 	"""    
-    
-	def __init__(self, device):
-		"""
+    def __init__(self, device):
+        """
         Discriminator model of the encoder
 
         Inputs:
             device - PyTorch device used to run the model on.
         """
-		super().__init__()
+        super().__init__()
         
         # save the inputs
-        self.k = k
+        self.device = device
         
         # initialize the linear layer
-		self.linear = nn.Linear(6*28*28,1)
+        self.linear = nn.Linear(6*28*28,1)
         
         # initialize the sigmoid layer
-		self.sigmoid = nn.Sigmoid()
-
-	def forward(self,generated, a):
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, encoded_batch):
         """
         Inputs:
             image_batch - Input batch of encoded images. Shape: [B, ?, ?, ?]
@@ -211,10 +213,82 @@ class EncoderDiscriminator(nn.Module):
                 0 when fake encoded image
         """
         
-		a = a.view(a.shape[0],6*28*28)
-		generated= generated[a.shape[0]:,:,:]
-		generated=generated.real
-		generated = generated.view(generated.shape[0],6*28*28)
-		x = torch.cat((a,generated),dim=0)
-		x = self.linear(x)
-		return self.sigmoid(x).squeeze()
+        # reshape the batch and get real values
+        encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28)
+        #encoded_batch = encoded_batch.real
+        
+        # prediction the labels
+        predictions = self.linear(encoded_batch)
+        predictions = self.sigmoid(predictions)
+        
+        # return the predictions
+        return predictions
+ 
+# ------ OLD ------
+class LenetProcessingModule(nn.Module):
+    def __init__(self, device):
+        super(LenetProcessingModule, self).__init__()
+
+        self.device = device
+        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
+        self.conv2 = nn.Conv2d(6, 16, 5, bias=False)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+   
+    
+    def forward(self, x):
+        #print(x.shape)
+        x = complex_relu(x,self.device)
+        #print(x.shape)
+        indices = complex_max_pool(x,self.pool)
+        #print(x.shape)
+        x = x[indices]
+        x = self.conv2(x)
+        x = complex_relu(x,self.device)
+        x = self.pool(x)
+
+        x = x.view(-1, 16 * 5 * 5)
+
+        x = self.fc1(x)
+        x = complex_relu(x,self.device)
+
+        x = self.fc2(x)
+        x = complex_relu(x,self.device)
+
+        x = self.fc3(x)
+        
+        return x
+
+class LenetDecoder(nn.Module):
+    def __init__(self):
+        super(LenetDecoder, self).__init__()
+
+        self.softmax = nn.Softmax()
+
+    def forward(self, x, theta):
+    	#Eerst terug roteren, dan .real dan softmax
+    	x = x * torch.exp(-1j * theta)
+    	x = x.real
+    	x = self.softmax(x)
+
+    	return x
+
+class ComplexLenet(nn.Module):
+    def __init__(self, device, k=5 ):
+        super(ComplexLenet, self).__init__()
+
+        self.device = device
+
+        self.encoder = LenetEncoder(k, self.device)
+        self.proccessing_module = LenetProcessingModule(self.device)
+        self.decoder = LenetDecoder()
+
+    def forward(self, x):
+        #x is an image batch
+        x, theta, discriminator_logits, labels = self.encoder(x)
+        #x = self.proccessing_module(x)
+        #x = self.decoder(x, theta)
+
+        return x, discriminator_logits, labels

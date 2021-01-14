@@ -25,7 +25,7 @@ import os
 
 from models.lenet import *
 from dataloaders.cifar10_loader import load_data
-from models.complex_lenet import *
+from models.complex_lenet_v2 import *
 
 import torchvision
 import torchvision.transforms as transforms
@@ -68,19 +68,29 @@ def train(args):
     for epoch in range(args.epochs):  # loop over the dataset multiple times
 
         running_loss = 0.0
-        discrim_running_loss = 0.0
+        discriminator_loss_value = 0.0
+        
+        # DEBUG
+        last_labels = None
+        last_predictions = None
+        
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
             outputs, discriminator_outputs, discrim_labels = net(inputs)
             discriminator_outputs, discrim_labels = discriminator_outputs.to(device), discrim_labels.to(device)
-            print(discriminator_outputs)
+            #print(discriminator_outputs)
             Discriminator_optimizer.zero_grad()
 
+            discrim_labels = discrim_labels.reshape(discrim_labels.shape[0], 1)
             discrim_loss = discriminator_criterion(discriminator_outputs,discrim_labels)
             discrim_loss.backward()
 
             Discriminator_optimizer.step()
+            
+            # DEBUG
+            last_labels = discrim_labels
+            last_predictions = discriminator_outputs
 
             #print(discrim_loss.item())
 
@@ -103,14 +113,22 @@ def train(args):
             #optimizer.step()
 
             # print statistics
-            discrim_running_loss += discrim_loss.item()
-            print(discrim_loss.item())
+            #discrim_running_loss += discrim_loss.item()
+            #print(discrim_loss.item())
             #running_loss += loss.item()
             #if i % 2000 == 1999:    # print every 2000 mini-batches
             	#print('[%d, %5d] loss: %.3f' %
-            	#(epoch + 1, i + 1, running_loss / 2000))
+            	#(epoch + 1, i + 1, running_loss / 2000))\
+                
+            discriminator_loss_value = discrim_loss.item()
+        print('epoch {} loss: {}'.format(epoch + 1, discriminator_loss_value))
             	
     print('Finished Training')
+    
+    print('Final labels')
+    print(last_labels)
+    print('Final predictions')
+    print(last_predictions)
 
     correct = 0
     total = 0
@@ -152,7 +170,7 @@ if __name__ == '__main__':
                         help='Minibatch size')
 
     # Other hyperparameters
-    parser.add_argument('--epochs', default=2, type=int,
+    parser.add_argument('--epochs', default=50, type=int,
                         help='Max number of epochs')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results')
