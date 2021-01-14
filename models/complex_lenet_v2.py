@@ -328,16 +328,16 @@ class LenetDecoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-    	decoded_batch = encoded_batch * torch.exp(-1j * thetas)
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas)
         
         # get rid of the imaginary part of the complex features
-    	decoded_batch = decoded_batch.real
+        decoded_batch = decoded_batch.real
         
         # apply the softmax layer
-    	decoded_batch = self.softmax(decoded_batch)
+        decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
-    	return decoded_batch
+        return decoded_batch
 
 class ComplexLenet(nn.Module):
     """
