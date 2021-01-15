@@ -66,7 +66,7 @@ def train(args):
     # TODO: misschien Adam? Optimizer voor het hele model (min g,Phi,d)
     model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
     # TODO: checken if inderdaad SGD? Optimizer om de discriminator leren (max D)
-    gan_optimizer = optim.SGD(net.encoder.discriminator.parameters(), lr=args.lr, momentum=0.9)
+    gan_optimizer = optim.SGD(net.encoder.parameters(), lr=args.lr, momentum=0.9)
 
 
     # start loop for the given number of epochs
@@ -91,48 +91,23 @@ def train(args):
             
             # calculate the loss of the GAN
             gan_loss = gan_criterion(discriminator_predictions, discriminator_labels)
-            gan_loss.backward()
+            # gan_loss.backward()
             
             # make the GAN perform better by setting a step with the optimizer
-            gan_optimizer.step()
             
-            # DEBUG
-            last_labels = discriminator_labels
-            last_predictions = discriminator_predictions
-
-            #print(discrim_loss.item())
 
             model_optimizer.zero_grad()
-            print("iuashfuisdhfisodsdfhi", outputs.shape)
-            print(labels.shape)
             task_loss = net_criterion(outputs, labels)
-            task_loss.backward()
+            
 
+            total_loss = gan_loss + task_loss
+            total_loss.backward()
+            # task_loss.backward()
+
+            gan_optimizer.step()
             model_optimizer.step()
 
-
-            #model_optimizer.zero_grad()
-            #task_loss = net_criterion(outputs, labels)
-            #task_loss.backward()
-            #model_optimizer.step()
-
-            ### Nadenken over volgorde Loss en optimizen
-
-            # zero the parameter gradients
-            # Loss discriminator.backward
-            # Step optim discrim (max)
-            # 
-            # zero model_optim gradients
-           	# task loss
-           	# overall loss = task loss -/+ loss discriminator
-           	# overall loss.backward
-           	#step model_opti
-
-            # forward + backward + optimize
-            #loss = criterion(outputs, labels)
-            #loss.backward()
-            #optimizer.step()
-
+            
             # print statistics
             #discrim_running_loss += discrim_loss.item()
             #print(discrim_loss.item())
@@ -141,17 +116,13 @@ def train(args):
             	#print('[%d, %5d] loss: %.3f' %
             	#(epoch + 1, i + 1, running_loss / 2000))\
                 
-            #discriminator_loss_value = discrim_loss.item()
-            #task_loss_value = task_loss.item()
-        print('epoch {} disc loss: {}'.format(epoch + 1, discriminator_loss_value))
-        #print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
+            gan_loss_value = gan_loss.item()
+            task_loss_value = task_loss.item()
+        print('epoch {} gan loss: {}'.format(epoch + 1, gan_loss_value))
+        print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
+        print('epoch {} total loss: {}'.format(epoch + 1, total_loss.item()))
             	
     print('Finished Training')
-    
-    print('Final labels')
-    print(last_labels)
-    print('Final predictions')
-    print(last_predictions)
 
     correct = 0
     total = 0

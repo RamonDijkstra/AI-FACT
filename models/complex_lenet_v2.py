@@ -360,17 +360,12 @@ class LenetDecoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-        print(encoded_batch.shape)
-        print(thetas.squeeze().shape)
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())
-        
-        print(decoded_batch.shape)
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
         
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
         
         # apply the softmax layer#
-        #print(decoded_batch.shape)
         decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
