@@ -41,65 +41,80 @@ def train(args):
     Inputs:
         args - Namespace object from the argument parser
     """
-
+    
+    # initialize the device to train the model on
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    # load the data from the dataloader
     classes, trainloader, testloader = load_data(
         batch_size=args.batch_size,
         num_workers=args.num_workers
     )
 
-    net = ComplexLenet(device,2)
+    # initialize the network
+    net = ComplexLenet(device, num_classes=10)
     net = net.to(device)
     
-    #Change to crossentropyloss if you use default lenet
+    # initialize the different loss criteria
+    # TODO: change net_criterion to crossentropyloss if you use default lenet
     net_criterion = nn.NLLLoss()
+    # TODO: check if gan_criterion is indeed BCEWithLogitsLoss
+    gan_criterion = nn.BCEWithLogitsLoss()
 
-    discriminator_criterion = nn.BCEWithLogitsLoss()
 
-    #Misschien Adam?
-    #Optimizer voor het hele model (min g,Phi,d)
+    # initialize the different optimizers
+    # TODO: misschien Adam? Optimizer voor het hele model (min g,Phi,d)
     model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
+    # TODO: checken if inderdaad SGD? Optimizer om de discriminator leren (max D)
+    gan_optimizer = optim.SGD(net.encoder.discriminator.parameters(), lr=args.lr, momentum=0.9)
 
-    #Optimizer om de discriminator leren (max D)
-    Discriminator_optimizer = optim.SGD(net.encoder.discriminator.parameters(),lr=args.lr, momentum=0.9)
 
-
-    for epoch in range(args.epochs):  # loop over the dataset multiple times
-
-        running_loss = 0.0
-        discriminator_loss_value = 0.0
+    # start loop for the given number of epochs
+    for epoch in range(args.epochs):
+        # keep track of the model and gan loss
+        model_loss_value = 0.0
+        gan_loss_value = 0.0
         
         # DEBUG
         last_labels = None
         last_predictions = None
         
+        # start loop over the different batches in the trainloader
         for i, data in enumerate(trainloader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data[0].to(device), data[1].to(device)
-
-            outputs, discriminator_outputs, discrim_labels = net(inputs)
-            discriminator_outputs, discrim_labels = discriminator_outputs.to(device), discrim_labels.to(device)
-            Discriminator_optimizer.zero_grad()
-
-            discrim_labels = discrim_labels.reshape(discrim_labels.shape[0], 1)
-            discrim_loss = discriminator_criterion(discriminator_outputs,discrim_labels)
-            discrim_loss.backward()
-
-            Discriminator_optimizer.step()
+            # get the images and labels from the data
+            images, labels = data[0].to(device), data[1].to(device)
+            
+            # run the images through the network
+            outputs, discriminator_predictions, discriminator_labels = net(images)
+            discriminator_predictions, discriminator_labels = discriminator_predictions.to(device), discriminator_labels.to(device)
+            gan_optimizer.zero_grad()
+            
+            # calculate the loss of the GAN
+            gan_loss = gan_criterion(discriminator_predictions, discriminator_labels)
+            gan_loss.backward()
+            
+            # make the GAN perform better by setting a step with the optimizer
+            gan_optimizer.step()
             
             # DEBUG
-            last_labels = discrim_labels
-            last_predictions = discriminator_outputs
+            last_labels = discriminator_labels
+            last_predictions = discriminator_predictions
 
             #print(discrim_loss.item())
 
             model_optimizer.zero_grad()
+            print("iuashfuisdhfisodsdfhi", outputs.shape)
+            print(labels.shape)
             task_loss = net_criterion(outputs, labels)
             task_loss.backward()
+
             model_optimizer.step()
 
 
+            #model_optimizer.zero_grad()
+            #task_loss = net_criterion(outputs, labels)
+            #task_loss.backward()
+            #model_optimizer.step()
 
             ### Nadenken over volgorde Loss en optimizen
 
@@ -126,9 +141,10 @@ def train(args):
             	#print('[%d, %5d] loss: %.3f' %
             	#(epoch + 1, i + 1, running_loss / 2000))\
                 
-            discriminator_loss_value = discrim_loss.item()
-            task_loss_value = task_loss.item()
-        
+            #discriminator_loss_value = discrim_loss.item()
+            #task_loss_value = task_loss.item()
+        print('epoch {} disc loss: {}'.format(epoch + 1, discriminator_loss_value))
+        #print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
             	
     print('Finished Training')
     

@@ -24,16 +24,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-def complex_conv(x_real, x_imag, conv_real, conv_img):
-	real_out = conv_real(x_real) - conv_imag(x_imag)
+def complex_conv(x_real, x_imag, conv_real, conv_imag):
+    """
+    Function to apply convolution on complex features
+
+    Inputs:
+        x_real - Real part of complex feature.
+        x_img - Imaginary part of complex feature.
+        conv_real - Convolution applied on the real part.
+        conv_imag - Convolution applied on the imaginary part.
+    Outputs:
+        real_out - Convolved real part of complex feature.
+        imag_out - Convolved imaginary part of complex feature.
+    """
+        
+    real_out = conv_real(x_real) - conv_imag(x_imag)
     imag_out = conv_real(x_imag) + conv_imag(x_real)
     return real_out, imag_out
 
+def complex_relu(x, device):
+    """
+    Function to apply ReLu on complex features
 
-def complex_relu(x,device):
+    Inputs:
+        x - Batch of complex features. Shape: [B, ?, ?, ?]
+        device - PyTorch device used to run the model on.
+    Outputs:
+        result - Resulting feature after ReLU. [B, ?, ?, ?]
+    """
+    
     #Zou dit werken? Sowieso
     c = torch.ones(x.shape, device=device)
-    check = x[0,0,0,0]
+    #check = x[0,0,0,0]
 
     noemer = complex_norm(x)
 
@@ -43,21 +65,54 @@ def complex_relu(x,device):
 
 
 def complex_norm(x):
-	result = torch.sqrt((x*x.conj()).real)
-	return result 
+    """
+    Function calculate norm of complex feature
+
+    Inputs:
+        x - Batch of complex features. Shape: [B, ?, ?, ?]
+    Outputs:
+        result - Norm of complex features. Shape: [B, ?, ?, ?]
+    """
+    try:
+        result = torch.sqrt((x*x.conj()).real)
+        #print("Haaaaaaaaaaaaai")
+    except:
+        result = torch.sqrt((x*x.conj()))
+
+        #print("Joe")
+
+    return result 
 
 def complex_max_pool(x, pool):
-	norm = complex_norm(x)
-	iets, indices = pool(norm)
+    """
+    Function to apply MaxPool on complex features
 
-	zeros = torch.zeros_like(x)
-	zeros[indices] = 1
-	print(zeros.shape)
-	#print(result.shape)
-	result = torch.where(zeros >1, x, 0)
-	print(result.shape)
-	#result = x[indices]
-	result = torch.index_select(x, 3,indices)
-	#print(result[0,0,0,0])
-	#print(result.shape)
-	return result
+    Inputs:
+        x - Batch of complex features. Shape: [B, ?, ?, ?]
+        ?
+    Outputs:
+        result - Resulting feature after MaxPool. [B, ?, ?, ?]
+    """
+    #print(x.shape)
+    #print("RAMON NIET ZO ZEIKEN", x)
+    norm = complex_norm(x)
+    #print(norm)
+    iets, indices = pool(norm)
+   # print(indices)
+   # print(indices.shape)
+
+    flattened_tensor = x.flatten(start_dim=2)
+    output = flattened_tensor.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
+   # print(output.shape)
+
+    #zeros = torch.zeros_like(x)
+    #zeros[indices] = 1
+    #print(zeros.shape)
+    #print(result.shape)
+    #result = torch.where(zeros >1, x, 0)
+    #print(result.shape)
+    #result = x.view(4,16,24*24)[indices]
+    #result = torch.index_select(x, 3,indices)
+    #print(result[0,0,0,0])
+    #print(result.shape)
+    return output
