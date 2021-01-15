@@ -73,7 +73,6 @@ def train(args):
         # DEBUG
         last_labels = None
         last_predictions = None
-        torch.autograd.set_detect_anomaly(True)
         
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
@@ -94,17 +93,13 @@ def train(args):
             last_predictions = discriminator_outputs
 
             #print(discrim_loss.item())
-            
+
             model_optimizer.zero_grad()
             task_loss = net_criterion(outputs, labels)
             task_loss.backward()
             model_optimizer.step()
 
 
-            model_optimizer.zero_grad()
-            task_loss = net_criterion(outputs, labels)
-            task_loss.backward()
-            model_optimizer.step()
 
             ### Nadenken over volgorde Loss en optimizen
 
@@ -133,8 +128,7 @@ def train(args):
                 
             discriminator_loss_value = discrim_loss.item()
             task_loss_value = task_loss.item()
-        print('epoch {} disc loss: {}'.format(epoch + 1, discriminator_loss_value))
-        print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))
+        
             	
     print('Finished Training')
     
@@ -183,11 +177,7 @@ if __name__ == '__main__':
                         help='Minibatch size')
 
     # Other hyperparameters
-<<<<<<< HEAD
     parser.add_argument('--epochs', default=5, type=int,
-=======
-    parser.add_argument('--epochs', default=2, type=int,
->>>>>>> eccb33df875373f2b2966ab8c97d41fb44302eaf
                         help='Max number of epochs')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results')
