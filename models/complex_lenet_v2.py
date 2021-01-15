@@ -248,9 +248,10 @@ class LenetProcessingModule(nn.Module):
         self.device = device
         
         # initialize the layers of the LeNet model
-        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)
-        self.conv2_real = nn.Conv2d(6, 16, 5)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(2, 2, return_indices=True) 
+        self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
+        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
@@ -273,27 +274,54 @@ class LenetProcessingModule(nn.Module):
         
         # transform the encoded features using the model layers
         # TODO: make this work
-        
-        x = complex_relu(x,self.device)
-        #print(x.shape)
-        indices = complex_max_pool(x,self.pool)
-        #print(x.shape)
-        x = x[indices]
-        # Split x in real and imaginary part
-        x_real, x_imag = self.complex_conv(x, conv2_imag, conv2_real)
-        x = complex_relu(x,self.device)
-        x = self.pool(x)
 
-        x = x.view(-1, 16 * 5 * 5)
+        encoded_batch_real = encoded_batch.real
+        encoded_batch_imag = encoded_batch.imag
 
-        x = self.fc1(x)
-        x = complex_relu(x,self.device)
+        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real,self.device), complex_relu(encoded_batch_imag,self.device)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
-        x = self.fc2(x)
-        x = complex_relu(x,self.device)
+        intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real,self.device), complex_relu(intermediate_imag,self.device)        
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
-        x = self.fc3(x)
-        
+        intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
+
+        intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real,self.device), complex_relu(intermediate_imag,self.device)    
+
+        intermediate_real, intermediate_imag = self.fc2(intermediate_real), self.fc2(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real,self.device), complex_relu(intermediate_imag,self.device)
+
+        intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
+        # ### Forward with complex
+
+        # intermediate_imag = complex_relu(encoded_batch_imag,self.device)
+        # intermediate_imag = complex_max_pool(intermediate_imag,self.pool)
+
+        # intermediate_real = 
+
+        # imediate_imag = self.Conv2d
+        # #print(x.shape)
+        # indices = complex_max_pool(x,self.pool)
+        # #print(x.shape)
+        # x = x[indices]
+        # # Split x in real and imaginary part
+        # x_real, x_imag = self.complex_conv(x, conv2_imag, conv2_real)
+        # x = complex_relu(x,self.device)
+        # x = self.pool(x)
+
+        # x = x.view(-1, 16 * 5 * 5)
+
+        # x = self.fc1(x)
+        # x = complex_relu(x,self.device)
+
+        # x = self.fc2(x)
+        # x = complex_relu(x,self.device)
+
+        # x = self.fc3(x)
+        x = intermediate_real+intermediate_imag
+        #print("ZO KAN IK DAT WETEN", x.shape)
         return x
 
 class LenetDecoder(nn.Module):
@@ -301,14 +329,18 @@ class LenetDecoder(nn.Module):
 	LeNet decoder model
 	"""
     
-    def __init__(self):
+    def __init__(self, num_classes):
         """
         Decoder module of the network
         """
         super(LenetDecoder, self).__init__()
 
         # initialize the softmax layer
+        self.num_classes = num_classes
+        #self.linear = nn.Linear(16*12*12, num_classes)
+
         self.softmax = nn.Softmax()
+
 
     def forward(self, encoded_batch, thetas):
         """
@@ -328,12 +360,17 @@ class LenetDecoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas)
+        print(encoded_batch.shape)
+        print(thetas.squeeze().shape)
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())
+        
+        print(decoded_batch.shape)
         
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
         
-        # apply the softmax layer
+        # apply the softmax layer#
+        #print(decoded_batch.shape)
         decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
@@ -344,7 +381,7 @@ class ComplexLenet(nn.Module):
 	Complex LeNet model
 	"""
     
-    def __init__(self, device, k=2):
+    def __init__(self, device, num_classes, k=2):
         """
         Complex LeNet network
 
@@ -356,13 +393,14 @@ class ComplexLenet(nn.Module):
         super(ComplexLenet, self).__init__()
 
         # save the inputs
+        self.num_classes = 10
         self.device = device
         self.k = k
 
         # initialize the different modules of the network
         self.encoder = LenetEncoder(self.k, self.device)
         self.proccessing_module = LenetProcessingModule(self.device)
-        self.decoder = LenetDecoder()
+        self.decoder = LenetDecoder(self.num_classes)
 
     def forward(self, image_batch, training=True):
         """
@@ -391,10 +429,10 @@ class ComplexLenet(nn.Module):
             x, thetas, discriminator_predictions, labels = self.encoder(image_batch)
             
             # send the encoded feature to the processing unit
-            #x = self.proccessing_module(x)
+            x = self.proccessing_module(x)
             
             # decode the feature from
-            #x = self.decoder(x, theta)
+            x = self.decoder(x, thetas)
             
             # return the decoded feature, discriminator predictions and real labels
             return x, discriminator_predictions, labels

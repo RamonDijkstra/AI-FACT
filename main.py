@@ -52,7 +52,7 @@ def train(args):
     )
 
     # initialize the network
-    net = ComplexLenet(device)
+    net = ComplexLenet(device, num_classes=10)
     net = net.to(device)
     
     # initialize the different loss criteria
@@ -86,7 +86,7 @@ def train(args):
             images, labels = data[0].to(device), data[1].to(device)
             
             # run the images through the network
-            outputs, discriminator_predictions, discriminator_labels = net(inputs)
+            outputs, discriminator_predictions, discriminator_labels = net(images)
             discriminator_predictions, discriminator_labels = discriminator_predictions.to(device), discriminator_labels.to(device)
             gan_optimizer.zero_grad()
             
@@ -98,15 +98,18 @@ def train(args):
             gan_optimizer.step()
             
             # DEBUG
-            last_labels = discrim_labels
-            last_predictions = discriminator_outputs
+            last_labels = discriminator_labels
+            last_predictions = discriminator_predictions
 
             #print(discrim_loss.item())
             
-            #model_optimizer.zero_grad()
-            #task_loss = net_criterion(outputs, labels)
-            #task_loss.backward()
-            #model_optimizer.step()
+            model_optimizer.zero_grad()
+            print("iuashfuisdhfisodsdfhi", outputs.shape)
+            print(labels.shape)
+            task_loss = net_criterion(outputs, labels)
+            task_loss.backward()
+
+            model_optimizer.step()
 
 
             #model_optimizer.zero_grad()
@@ -139,7 +142,7 @@ def train(args):
             	#print('[%d, %5d] loss: %.3f' %
             	#(epoch + 1, i + 1, running_loss / 2000))\
                 
-            discriminator_loss_value = discrim_loss.item()
+            #discriminator_loss_value = discrim_loss.item()
             #task_loss_value = task_loss.item()
         print('epoch {} disc loss: {}'.format(epoch + 1, discriminator_loss_value))
         #print('epoch {} task loss: {}'.format(epoch + 1, task_loss_value))

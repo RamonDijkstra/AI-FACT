@@ -55,7 +55,7 @@ def complex_relu(x, device):
     
     #Zou dit werken? Sowieso
     c = torch.ones(x.shape, device=device)
-    check = x[0,0,0,0]
+    #check = x[0,0,0,0]
 
     noemer = complex_norm(x)
 
@@ -73,9 +73,15 @@ def complex_norm(x):
     Outputs:
         result - Norm of complex features. Shape: [B, ?, ?, ?]
     """
-    
-	result = torch.sqrt((x*x.conj()).real)
-	return result 
+    try:
+        result = torch.sqrt((x*x.conj()).real)
+        #print("Haaaaaaaaaaaaai")
+    except:
+        result = torch.sqrt((x*x.conj()))
+
+        #print("Joe")
+
+    return result 
 
 def complex_max_pool(x, pool):
     """
@@ -87,18 +93,26 @@ def complex_max_pool(x, pool):
     Outputs:
         result - Resulting feature after MaxPool. [B, ?, ?, ?]
     """
-    
-	norm = complex_norm(x)
-	iets, indices = pool(norm)
+    #print(x.shape)
+    #print("RAMON NIET ZO ZEIKEN", x)
+    norm = complex_norm(x)
+    #print(norm)
+    iets, indices = pool(norm)
+   # print(indices)
+   # print(indices.shape)
 
-	zeros = torch.zeros_like(x)
-	zeros[indices] = 1
-	print(zeros.shape)
-	#print(result.shape)
-	result = torch.where(zeros >1, x, 0)
-	print(result.shape)
-	#result = x[indices]
-	result = torch.index_select(x, 3,indices)
-	#print(result[0,0,0,0])
-	#print(result.shape)
-	return result
+    flattened_tensor = x.flatten(start_dim=2)
+    output = flattened_tensor.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
+   # print(output.shape)
+
+    #zeros = torch.zeros_like(x)
+    #zeros[indices] = 1
+    #print(zeros.shape)
+    #print(result.shape)
+    #result = torch.where(zeros >1, x, 0)
+    #print(result.shape)
+    #result = x.view(4,16,24*24)[indices]
+    #result = torch.index_select(x, 3,indices)
+    #print(result[0,0,0,0])
+    #print(result.shape)
+    return output
