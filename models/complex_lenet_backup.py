@@ -37,7 +37,6 @@ class LenetEncoder(nn.Module):
     def __init__(self, k, device):
         """
         Encoder module of the network
-
         Inputs:
             k - Level of anonimity. k-1 fake features are generated
                 to obscure the real feature.
@@ -111,7 +110,6 @@ class EncoderGenerator(nn.Module):
     def __init__(self, k, device):
         """
         Generator model of the encoder
-
         Inputs:
             k - Level of anonimity. k-1 fake features are generated
                 to obscure the real feature.
@@ -122,9 +120,8 @@ class EncoderGenerator(nn.Module):
         # save the inputs
         self.k = k
         self.device = device
-        self.conv1 = nn.Conv2d(3, 6, 5)
 
-    def forward(self, x, training=True):
+    def forward(self, a, training=True):
         """
         Inputs:
             a - Input batch of convolved images. Shape: [B, C, W, H]
@@ -143,7 +140,6 @@ class EncoderGenerator(nn.Module):
             delta_thetas - Angles used for rotating the fake features. Shape: [B * k-1, 1, 1, 1]
         """
 
-        a = self.conv1(x).to(self.device)
         # save the image dimensions for later use
         image_dimensions = a.shape
         
@@ -183,8 +179,8 @@ class EncoderGenerator(nn.Module):
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
             fake_x = (a + fake_b *1j) * delta_thetas
-            fake_x = fake_x.real
             fake_x = fake_x.to(self.device)
+            fake_x = fake_x.real
             
             # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
             return a, x, thetas, fake_x, delta_thetas
@@ -202,8 +198,6 @@ class EncoderDiscriminator(nn.Module):
         """
         super().__init__()
         
-        self.device = device
-
         # initialize the linear layer
         self.linear = nn.Linear(6*28*28,1)
         
@@ -225,7 +219,8 @@ class EncoderDiscriminator(nn.Module):
         """
         
         # reshape the batch
-        encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28).to(self.device)
+        encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28)
+        
         # predict the labels
         predictions = self.linear(encoded_batch)
         predictions = self.sigmoid(predictions)
@@ -241,7 +236,6 @@ class LenetProcessingModule(nn.Module):
     def __init__(self, device):
         """
         Processing module of the network
-
         Inputs:
             device - PyTorch device used to run the model on.
         """
@@ -382,7 +376,6 @@ class ComplexLenet(nn.Module):
     def __init__(self, device, num_classes, k=2):
         """
         Complex LeNet network
-
         Inputs:
             device - PyTorch device used to run the model on.
             k - Level of anonimity. k-1 fake features are generated

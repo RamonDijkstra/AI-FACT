@@ -66,7 +66,9 @@ def train(args):
     # TODO: misschien Adam? Optimizer voor het hele model (min g,Phi,d)
     model_optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9)
     # TODO: checken if inderdaad SGD? Optimizer om de discriminator leren (max D)
-    gan_optimizer = optim.SGD(net.encoder.parameters(), lr=args.lr, momentum=0.9)
+    # gan_optimizer = optim.SGD(net.encoder.parameters(), lr=args.lr, momentum=0.9)
+    gan_optimizer_gen = torch.optim.Adam(net.encoder.generator.parameters(), lr=args.lr, betas=(0.5, 0.999))
+    gan_optimizer_disc = torch.optim.Adam(net.encoder.discriminator.parameters(), lr=args.lr, betas=(0.5, 0.999))
 
 
     # start loop for the given number of epochs
@@ -91,6 +93,7 @@ def train(args):
             
             # calculate the loss of the GAN
             gan_loss = gan_criterion(discriminator_predictions, discriminator_labels)
+            print(gan_loss)
             # gan_loss.backward()
             
             # make the GAN perform better by setting a step with the optimizer
@@ -104,7 +107,9 @@ def train(args):
             total_loss.backward()
             # task_loss.backward()
 
-            gan_optimizer.step()
+            # gan_optimizer.step()
+            net.encoder.generator_step(images)
+            net.encoder.discriminator_step(images)
             model_optimizer.step()
 
             
