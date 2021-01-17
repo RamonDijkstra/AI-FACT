@@ -77,9 +77,11 @@ def complex_norm(x):
         result = torch.sqrt((x*x.conj()).real)
         #print("Haaaaaaaaaaaaai")
     except:
-        result = torch.sqrt((x*x.conj()))
-
+        # result = torch.sqrt((x*x.conj()))
+        # result = torch.sqrt((x**2))
+        result = torch.abs(x)
         #print("Joe")
+
 
     return result 
 

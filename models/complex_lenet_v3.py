@@ -26,6 +26,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 import numpy as np
 from utils import *
@@ -177,7 +178,8 @@ class LenetProcessingModule(nn.Module):
         
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2, return_indices=True) 
+        # self.pool = nn.MaxPool2d(2, 2, return_indices=True) 
+        self.pool = nn.LPPool2d(2, 2)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
@@ -207,11 +209,13 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
 
@@ -389,6 +393,9 @@ class ComplexLenet(pl.LightningModule):
         #print('check5')
         loss = gan_loss + model_loss
 
+       # log the loss
+        self.log("generator/loss", gan_loss)
+        self.log("model/loss", model_loss)
         self.log("total/loss", loss)
 
         return loss
@@ -456,10 +463,7 @@ class GAN(nn.Module):
         
         # compute the loss over the fake features
         loss_fn = nn.BCEWithLogitsLoss()
-        loss = loss_fn(preds, t_fake)
-
-        # log the generator loss
-        self.log("generator/loss", loss)
+        loss = loss_fn(preds, labels_fake)
 
         # return the generator loss, real encoded feature and real angles
         return loss, x, thetas
@@ -484,9 +488,6 @@ class GAN(nn.Module):
         discriminator_predictions = self.discriminator(real_and_fake_images)
         loss_fn = nn.BCEWithLogitsLoss()
         loss = loss_fn(discriminator_predictions, labels)
-        
-        # log the discriminator loss
-        self.log("discriminator/loss", loss)
 
         # return the discriminator loss, real encoded feature and real angles
         return loss, x, thetas

@@ -69,6 +69,8 @@ def train_model(args):
     # Training
     trainer.fit(model, trainloader)
 
+    trainer.test(test_dataloaders=testloader)
+
     return model
 
 
@@ -92,14 +94,14 @@ if __name__ == '__main__':
                         help='Minibatch size')
 
     # Other hyperparameters
-    parser.add_argument('--epochs', default=15, type=int,
+    parser.add_argument('--epochs', default=2, type=int,
                         help='Max number of epochs')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results')
     parser.add_argument('--num_workers', default=2, type=int,
                         help='Number of workers to use in the data loaders. To have a truly deterministic run, this has to be 0. ' + \
                              'For your assignment report, you can use multiple workers (e.g. 4) and do not have to set it to 0.')
-    parser.add_argument('--log_dir', default='GAN_logs', type=str,
+    parser.add_argument('--log_dir', default='GAN_logs/', type=str,
                         help='Directory where the PyTorch Lightning logs should be created.')
     parser.add_argument('--progress_bar', action='store_true',
                         help=('Use a progress bar indicator for interactive experimentation. '
