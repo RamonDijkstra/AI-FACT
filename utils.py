@@ -26,72 +26,91 @@ import numpy as np
 
 def complex_conv(x_real, x_imag, conv_real, conv_imag):
     """
-    Function to apply convolution on complex features
+    Function to apply convolution on complex features.
 
     Inputs:
         x_real - Real part of complex feature.
         x_img - Imaginary part of complex feature.
-        conv_real - Convolution applied on the real part.
-        conv_imag - Convolution applied on the imaginary part.
+        conv_real - Convolution to be applied on the real part.
+        conv_imag - Convolution to be applied on the imaginary part.
     Outputs:
         real_out - Convolved real part of complex feature.
         imag_out - Convolved imaginary part of complex feature.
     """
-        
+    
+    # calculate the convolution on the real and imaginary parts
     real_out = conv_real(x_real) - conv_imag(x_imag)
     imag_out = conv_real(x_imag) + conv_imag(x_real)
+    
+    # return the convolved real and imaginary parts
     return real_out, imag_out
 
-def complex_relu(x, device):
+def complex_relu(x, device, c=1):
     """
-    Function to apply ReLu on complex features
+    Function to apply ReLu on complex features.
 
     Inputs:
-        x - Batch of complex features. Shape: [B, ?, ?, ?]
+        x - Batch of complex features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
         device - PyTorch device used to run the model on.
+        c - Fixed constant used in the max function. Default = 1
     Outputs:
-        result - Resulting feature after ReLU. [B, ?, ?, ?]
+        result - Resulting features after ReLU. [B, ?, ?, ?]
     """
     
-    #Zou dit werken? Sowieso
-    c = torch.ones(x.shape, device=device)
-    #check = x[0,0,0,0]
+    # create the sum constant
+    constant = torch.ones(x.shape, device=device) * c
 
-    noemer = complex_norm(x)
+    # calculate the denominator
+    denominator = complex_norm(x)
 
-    result  = noemer / torch.max(noemer, c)
+    # calculate the resulting features
+    result  = denominator / torch.max(denominator, constant)
     result = result * x
+    
+    # return the resulting features
     return result
 
 
 def complex_norm(x):
     """
-    Function calculate norm of complex feature
+    Function calculate norm of complex features.
 
     Inputs:
-        x - Batch of complex features. Shape: [B, ?, ?, ?]
+        x - Batch of complex features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
     Outputs:
-        result - Norm of complex features. Shape: [B, ?, ?, ?]
+        norm - Norm of complex features. Shape: [B, C, W, H]
     """
+    
     try:
-        result = torch.sqrt((x*x.conj()).real)
-        #print("Haaaaaaaaaaaaai")
+        # calculate the norm of a complex valued feature
+        norm = torch.sqrt((x*x.conj()).real)
     except:
-        # result = torch.sqrt((x*x.conj()))
-        # result = torch.sqrt((x**2))
-        result = torch.abs(x)
-        #print("Joe")
+        # calculate the norm of a real valued feature
+        norm = torch.abs(x)
+    
+    # return the resulting norm
+    return norm
 
-
-    return result 
-
+# TODO: below is not used anymore?
 def complex_max_pool(x, pool):
     """
-    Function to apply MaxPool on complex features
+    Function to apply MaxPool on complex features.
 
     Inputs:
-        x - Batch of complex features. Shape: [B, ?, ?, ?]
-        ?
+        x - Batch of complex features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+        pool - 
     Outputs:
         result - Resulting feature after MaxPool. [B, ?, ?, ?]
     """
