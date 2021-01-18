@@ -127,8 +127,6 @@ if __name__ == '__main__':
     # Optimizer hyperparameters
     parser.add_argument('--lr', default=3e-4, type=float,
                         help='Learning rate to use')
-    parser.add_argument('--batch_size', default=4, type=int,
-                        help='Minibatch size')
 
     # -------------------------
     
