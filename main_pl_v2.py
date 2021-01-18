@@ -88,7 +88,7 @@ if __name__ == '__main__':
                         help='Number of channels/filters to use in the CNN encoder/decoder.')
 
     # Optimizer hyperparameters
-    parser.add_argument('--lr', default=1e-3, type=float,
+    parser.add_argument('--lr', default=3e-4, type=float,
                         help='Learning rate to use')
     parser.add_argument('--batch_size', default=4, type=int,
                         help='Minibatch size')

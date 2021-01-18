@@ -178,8 +178,8 @@ class LenetProcessingModule(nn.Module):
         
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
-        # self.pool = nn.MaxPool2d(2, 2, return_indices=True) 
-        self.pool = nn.LPPool2d(2, 2)
+        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
+        # self.pool = nn.LPPool2d(2, 2)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
@@ -209,13 +209,13 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
 
@@ -305,7 +305,7 @@ class LenetDecoder(nn.Module):
         decoded_batch = decoded_batch.real
         
         # apply the softmax layer#
-        decoded_batch = self.softmax(decoded_batch)
+        # decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
         return decoded_batch
@@ -337,9 +337,10 @@ class ComplexLenet(pl.LightningModule):
         self.encoder = GAN(self.k, self.lr)
         self.proccessing_module = LenetProcessingModule()
         self.decoder = LenetDecoder(self.num_classes)
+        self.softmax = nn.Softmax()
         
         # initialize the loss function of the complex LeNet
-        self.loss_fn = nn.NLLLoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
         """
@@ -347,7 +348,7 @@ class ComplexLenet(pl.LightningModule):
         """
         
         # initialize optimizer for the entire model
-        model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         
         # return the optimizer
         return model_optimizer
@@ -376,29 +377,48 @@ class ComplexLenet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
-        
-        #print('check2')
+
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
         
-        #print('check3')
         # decode the feature from
         result = self.decoder(out, thetas)
+
+        # Log the train accuracy
+        out = self.softmax(result)
+        preds = out.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
+        self.log('train_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
         
-        #print('check4')
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
         model_loss = self.loss_fn(result, labels)
         
-        #print('check5')
         loss = gan_loss + model_loss
 
-       # log the loss
+        # log the loss
         self.log("generator/loss", gan_loss)
         self.log("model/loss", model_loss)
         self.log("total/loss", loss)
 
         return loss
+
+    def test_step(self, batch, batch_idx):
+        x, labels = batch
+
+        # run the image batch through the encoder (generator and discriminator)
+        gan_loss, out, thetas = self.encoder(x, False)
+        
+        # send the encoded feature to the processing unit
+        out = self.proccessing_module(out)
+        
+        # decode the feature from
+        result = self.decoder(out, thetas)
+        result = self.softmax(result)
+        preds = result.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
+
+        self.log('test_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
 
 class GAN(nn.Module):
 
