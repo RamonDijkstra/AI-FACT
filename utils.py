@@ -60,22 +60,26 @@ def complex_relu(x, device, c=1):
     Outputs:
         result - Resulting features after ReLU. [B, ?, ?, ?]
     """
-    
+
+    # calculate the denominator
+    norm = complex_norm(x, device)
+
+    #if model is RESNET: c = 1
+    #else expectation of norm
+    # constant = torch.mean(norm, dim=-1, keepdim=True)
+
     # create the sum constant
     constant = torch.ones(x.shape, device=device) * c
 
-    # calculate the denominator
-    denominator = complex_norm(x)
-
     # calculate the resulting features
-    result  = denominator / torch.max(denominator, constant)
+    result  = norm / torch.max(norm, constant)
     result = result * x
     
     # return the resulting features
     return result
 
 
-def complex_norm(x):
+def complex_norm(x, device):
     """
     Function calculate norm of complex features.
 
@@ -93,13 +97,14 @@ def complex_norm(x):
         norm = torch.sqrt((x*x.conj()).real)
     except:
         # calculate the norm of a real valued feature
-        norm = torch.abs(x)
+        # norm = torch.abs(x)
+        norm = torch.norm(x, dim=-1, keepdim=True) * torch.ones(x.shape, device=device)
     
     # return the resulting norm
     return norm
 
 # TODO: below is not used anymore?
-def complex_max_pool(x, pool):
+def complex_max_pool(x, device, pool):
     """
     Function to apply MaxPool on complex features.
 
@@ -113,7 +118,7 @@ def complex_max_pool(x, pool):
     Outputs:
         result - Resulting feature after MaxPool. [B, ?, ?, ?]
     """
-    norm = complex_norm(x)
+    norm = complex_norm(x, device)
     iets, indices = pool(norm)
 
     flattened_tensor = x.flatten(start_dim=2)

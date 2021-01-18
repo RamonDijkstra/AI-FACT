@@ -101,8 +101,8 @@ if __name__ == '__main__':
     # dataloader hyperparameters
     parser.add_argument('--batch_size', default=4, type=int,
                         help='Minibatch size. Default is 4.')
-    parser.add_argument('--num_workers', default=0, type=int,
-                        help='Number of workers to use in the data loaders. Default is 0 (truly deterministic).')
+    parser.add_argument('--num_workers', default=2, type=int,
+                        help='Number of workers to use in the data loaders. Default is not 0 (truly deterministic).')
                         
     # training hyperparameters
     parser.add_argument('--epochs', default=10, type=int,
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         help='Number of channels/filters to use in the CNN encoder/decoder.')
 
     # Optimizer hyperparameters
-    parser.add_argument('--lr', default=5e-4, type=float,
+    parser.add_argument('--lr', default=3e-4, type=float,
                         help='Learning rate to use')
 
     # -------------------------
