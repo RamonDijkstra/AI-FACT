@@ -14,6 +14,10 @@
 # Date Created: 2020-01-08
 ###############################################################################
 
+"""
+Main training file
+"""
+
 import argparse
 import os
 import torch
@@ -24,9 +28,19 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from models.lenet import *
-from dataloaders.cifar10_loader import load_data
-from models.complex_lenet_v3 import *
+from dataloaders.cifar10_loader import load_data as load_cifar10_data
+from dataloaders.cifar100_loader import load_data as load_cifar100_data
+from models.complex_lenet.complex_lenet_v3 import *
 
+# initialize our model dictionary
+model_dict = {}
+model_dict['LeNet'] = ComplexLenet
+#model_dict['ResNet-56'] = ComplexResnet
+
+# initialize our dataset dictionary
+dataset_dict = {}
+dataset_dict['CIFAR-10'] = load_cifar10_data
+dataset_dict['CIFAR-100'] = load_cifar100_data
 
 def train_model(args):
     """
@@ -40,13 +54,10 @@ def train_model(args):
     torch.autograd.set_detect_anomaly(True)
     
     # make folder for the Lightning logs
-    os.makedirs(args.log_dir, exist_ok=True)\
+    os.makedirs(args.log_dir, exist_ok=True)
     
-    # load the data from the dataloader
-    classes, trainloader, testloader = load_data(
-        batch_size=args.batch_size,
-        num_workers=args.num_workers
-    )
+    # load the data from the dataloader  
+    classes, trainloader, testloader = load_data(args.dataset, args.batch_size, args.num_workers)
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
@@ -62,9 +73,8 @@ def train_model(args):
     
     # initialize the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # TODO: make models variable depending on command line arguments
     num_classes = len(classes)
-    model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
+    model = initialize_model(args.model, num_classes, args.lr, args.k)
 
     # show the progress bar if enabled
     if not args.progress_bar:
@@ -81,27 +91,63 @@ def train_model(args):
     # return the model
     return model
 
+def initialize_model(model='LeNet', num_classes=10, lr=3e-4, k=2):
+    """
+    Function for initializing a model based on the given command line arguments.
+    
+    Inputs:
+        model - String indicating the model to use. Default = 'LeNet'
+        num_classes - Int indicating the number of classes. Default = 10
+        lr - Float indicating the optimizer learning rate. Default = 3e-4
+        k - Level of anonimity. k-1 fake features are generated
+            to train the discriminator. Default = 2
+    """
+    
+    # initialize the model if possible
+    if model in model_dict:
+        return model_dict[model](num_classes, k, lr)
+    # alert the user if the given model does not exist
+    else:
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        
+def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
+    """
+    Function for loading a dataset based on the given command line arguments.
+    
+    Inputs:
+        dataset - String indicating the dataset to use. Default = 'CIFAR-10'
+        batch_size - Int indicating the size of the mini batches. Default = 256
+        num_workers - Int indicating the number of workers to use in the dataloader. Default = 0 (truly deterministic)
+    """
+    
+    # load the dataset if possible
+    if dataset in dataset_dict:
+        return dataset_dict[dataset](batch_size, num_workers)
+    # alert the user if the given dataset does not exist
+    else:
+        assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
 
 if __name__ == '__main__':
     """
     Direct calling of the python file via command line.
-    Handles the given hyperparameters
+    Handles the given hyperparameters.
     """
     
     # initialize the parser for the command line arguments
     parser = argparse.ArgumentParser()
     
-    # --- OUR HYPERPARAMETERS ---
-    
     # model hyperparameters
     parser.add_argument('--model', default='LeNet', type=str,
                         help='What complex model to use. Default is LeNet.',
-                        choices=['LeNet', 'ResNet'])
+                        choices=['LeNet', 'ResNet-56'])
+    parser.add_argument('--dataset', default='CIFAR-10', type=str,
+                        help='What dataset to use. Default is CIFAR-10.',
+                        choices=['CIFAR-10', 'CIFAR-100'])
     
     # dataloader hyperparameters
-    parser.add_argument('--batch_size', default=4, type=int,
+    parser.add_argument('--batch_size', default=256, type=int,
                         help='Minibatch size. Default is 4.')
-    parser.add_argument('--num_workers', default=2, type=int,
+    parser.add_argument('--num_workers', default=0, type=int,
                         help='Number of workers to use in the data loaders. Default is not 0 (truly deterministic).')
                         
     # training hyperparameters
@@ -109,26 +155,16 @@ if __name__ == '__main__':
                         help='Max number of epochs. Default is 10.')
     parser.add_argument('--k', default=2, type=int,
                         help='Level of anonimity to use during training. k-1 fake features are generated to train the encoder. Default is 2,')                   
-    parser.add_argument('--log_dir', default='GAN_logs/', type=str,
+    parser.add_argument('--log_dir', default='complex_logs/', type=str,
                         help='Directory where the PyTorch Lightning logs are created. Default is GAN_logs/.')
     parser.add_argument('--progress_bar', action='store_true',
                         help='Use a progress bar indicator. Disabled by default.')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results. Default is 42.')
-    
-    # --- OLD HYPERPARAMETERS ---
-
-    # Model hyperparameters
-    parser.add_argument('--hidden_dims', default=[512], type=int, nargs='+',
-                        help='Hidden dimensionalities to use inside the network. To specify multiple, use " " to separate them. Example: "512 256"')
-    parser.add_argument('--num_filters', default=32, type=int,
-                        help='Number of channels/filters to use in the CNN encoder/decoder.')
-
-    # Optimizer hyperparameters
+                        
+    # optimizer hyperparameters
     parser.add_argument('--lr', default=3e-4, type=float,
-                        help='Learning rate to use')
-
-    # -------------------------
+                        help='Learning rate to use. Default is 3e-4.')
     
     # parse the arguments 
     args = parser.parse_args()
