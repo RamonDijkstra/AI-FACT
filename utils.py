@@ -87,18 +87,17 @@ def complex_norm(x, device):
         x - Batch of complex features. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per feature
-                W- feature width
+                W - feature width
                 H - feature height
     Outputs:
         norm - Norm of complex features. Shape: [B, C, W, H]
     """
-    
+
     try:
         norm = torch.sqrt((x*x.conj()).real)
     except:
         # calculate the norm of a real valued feature
-        # norm = torch.abs(x)
-        norm = torch.norm(x, dim=-1, keepdim=True) * torch.ones(x.shape, device=device)
+        norm = torch.abs(x)
     
     # return the resulting norm
     return norm

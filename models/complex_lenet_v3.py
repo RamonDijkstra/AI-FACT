@@ -77,12 +77,13 @@ class EncoderGenerator(nn.Module):
         image_dimensions = a.shape
         
         # compute the magnitude of the image batch
-        a_magnitude = torch.norm(a).item()
+        a_magnitude = torch.norm(torch.norm(a, dim=(2,3)), dim=1)
 
         # create real obfuscating features b
         b = torch.normal(0, 1, size=tuple((image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
-        b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
-        b = (b / b_magnitude)* a_magnitude
+        # b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
+        b_magnitude = torch.norm(torch.norm(b, dim=(2,3)), dim=1)
+        b = (b / b_magnitude) * a_magnitude
         b = b.to(self.device)
 
         # sample angles to rotate the features for the real rotation
