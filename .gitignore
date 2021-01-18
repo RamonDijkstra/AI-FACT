@@ -3,3 +3,4 @@
 *.gz
 data/
 GAN_logs/
+__pycache__/
