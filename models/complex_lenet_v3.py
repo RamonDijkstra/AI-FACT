@@ -77,14 +77,14 @@ class EncoderGenerator(nn.Module):
         image_dimensions = a.shape
         
         # compute the magnitude of the image batch
-        a_magnitude = torch.norm(torch.norm(a, dim=(2,3)), dim=1)
+        a_magnitude = torch.norm(torch.norm(a, dim=(2,3), keepdim=True), dim=1, keepdim=True)
 
         # create real obfuscating features b
         b = torch.normal(0, 1, size=tuple((image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
-        # b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
-        b_magnitude = torch.norm(torch.norm(b, dim=(2,3)), dim=1)
-        b = (b / b_magnitude) * a_magnitude
         b = b.to(self.device)
+        # b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
+        b_magnitude = torch.norm(torch.norm(b, dim=(2,3), keepdim=True), dim=1, keepdim=True)
+        b = (b / b_magnitude) * a_magnitude
 
         # sample angles to rotate the features for the real rotation
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
@@ -100,9 +100,9 @@ class EncoderGenerator(nn.Module):
         if training:      
             # create fake obfuscating features b
             fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
-            fake_b_magnitude = torch.sqrt(torch.sum(torch.square(fake_b)).type(torch.FloatTensor))
-            fake_b = (fake_b / fake_b_magnitude)* a_magnitude
             fake_b = fake_b.to(self.device)
+            fake_b_magnitude = torch.norm(torch.norm(fake_b, dim=(2,3), keepdim=True), dim=1, keepdim=True)
+            fake_b = (fake_b / fake_b_magnitude)* a_magnitude
         
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
