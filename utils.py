@@ -66,13 +66,16 @@ def complex_relu(x, device, c=1):
 
     #if model is RESNET: c = 1
     #else expectation of norm
-    # constant = torch.mean(norm, dim=-1, keepdim=True)
+    constant = torch.mean(norm, dim=-1, keepdim=True)
+
+
+    #TODO MISSCHIEN SHAPES FIXEN IDKKKKKK
 
     # create the sum constant
-    constant = torch.ones(x.shape, device=device) * c
+    # constant = torch.ones(x.shape, device=device) * c
 
     # calculate the resulting features
-    result  = norm / torch.max(norm, constant)
+    result = norm / torch.max(norm, constant)
     result = result * x
     
     # return the resulting features

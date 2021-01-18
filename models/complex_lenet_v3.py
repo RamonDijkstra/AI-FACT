@@ -88,32 +88,26 @@ class EncoderGenerator(nn.Module):
 
         # sample angles to rotate the features for the real rotation
         thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
-        thetas = thetas.cpu()
-        thetas = (1j * thetas).exp()
-        thetas = thetas.to(self.device)
+        thetas = torch.exp(1j * thetas)
         
         # compute encoded real feature
-        x = (a + b *1j) * thetas
+        x = (a + b * 1j) * thetas
         x = x.to(self.device)
         
         # check if training
         if training:      
             # create fake obfuscating features b
-            fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
-            fake_b = fake_b.to(self.device)
+            fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3]))).to(self.device)
             fake_b_magnitude = torch.norm(torch.norm(fake_b, dim=(2,3), keepdim=True), dim=1, keepdim=True)
             fake_b = (fake_b / fake_b_magnitude)* a_magnitude
         
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
-            delta_thetas = delta_thetas.cpu()
-            delta_thetas = (1j * delta_thetas).exp()
-            delta_thetas = delta_thetas.to(self.device)
+            delta_thetas = torch.exp(1j * delta_thetas)
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
             fake_x = (fake_a + fake_b *1j) * delta_thetas
-            fake_x = fake_x.real
             fake_x = fake_x.to(self.device)
             
             # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
@@ -153,6 +147,9 @@ class EncoderDiscriminator(nn.Module):
                 1 when real feature
                 0 when fake feature
         """
+
+        #to real values
+        encoded_batch = encoded_batch.real
         
         # reshape the batch
         encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28).to(self.device)
@@ -168,7 +165,7 @@ class LenetProcessingModule(nn.Module):
 	LeNet processing module model
 	"""
     
-    def __init__(self):
+    def __init__(self, num_classes):
         """
         Processing module of the network
 
@@ -185,7 +182,7 @@ class LenetProcessingModule(nn.Module):
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, num_classes)
     
     def forward(self, encoded_batch):
         """
@@ -227,33 +224,15 @@ class LenetProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
-        # ### Forward with complex
 
-        # intermediate_imag = complex_relu(encoded_batch_imag,self.device)
-        # intermediate_imag = complex_max_pool(intermediate_imag,self.pool)
+        # print(intermediate_real)
+        # print(intermediate_imag)
+        # with torch.no_grad():
+        #     x = intermediate_real + intermediate_imag * 1j
+        x = torch.complex(intermediate_real, intermediate_imag)
+        #  print(x)
 
-        # intermediate_real = 
-
-        # imediate_imag = self.Conv2d
-        # #print(x.shape)
-        # indices = complex_max_pool(x,self.pool)
-        # #print(x.shape)
-        # x = x[indices]
-        # # Split x in real and imaginary part
-        # x_real, x_imag = self.complex_conv(x, conv2_imag, conv2_real)
-        # x = complex_relu(x,self.device)
-        # x = self.pool(x)
-
-        # x = x.view(-1, 16 * 5 * 5)
-
-        # x = self.fc1(x)
-        # x = complex_relu(x,self.device)
-
-        # x = self.fc2(x)
-        # x = complex_relu(x,self.device)
-
-        # x = self.fc3(x)
-        x = intermediate_real+intermediate_imag
+        # a = b
         return x
     
     @property
@@ -335,7 +314,7 @@ class ComplexLenet(pl.LightningModule):
 
         # initialize the different modules of the network
         self.encoder = GAN(self.k, self.lr)
-        self.proccessing_module = LenetProcessingModule()
+        self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
         self.softmax = nn.Softmax()
         
@@ -495,7 +474,7 @@ class GAN(nn.Module):
         # encode the convolved images using the generator
         with torch.no_grad():
             a, x, thetas, fake_x, delta_thetas = self.generator(x)
-        
+
         # create a batch of real feature and encoded fake features
         real_and_fake_images = torch.cat([a, fake_x], dim=0).to(self.device)
         
