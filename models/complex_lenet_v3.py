@@ -278,7 +278,7 @@ class LenetDecoder(nn.Module):
         self.num_classes = num_classes
         #self.linear = nn.Linear(16*12*12, num_classes)
 
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
 
     def forward(self, encoded_batch, thetas):
