@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         help='Number of channels/filters to use in the CNN encoder/decoder.')
 
     # Optimizer hyperparameters
-    parser.add_argument('--lr', default=3e-4, type=float,
+    parser.add_argument('--lr', default=5e-4, type=float,
                         help='Learning rate to use')
 
     # -------------------------

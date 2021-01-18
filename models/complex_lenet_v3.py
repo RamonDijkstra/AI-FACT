@@ -111,7 +111,7 @@ class EncoderGenerator(nn.Module):
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
-            fake_x = (a + fake_b *1j) * delta_thetas
+            fake_x = (fake_a + fake_b *1j) * delta_thetas
             fake_x = fake_x.real
             fake_x = fake_x.to(self.device)
             
@@ -161,7 +161,7 @@ class EncoderDiscriminator(nn.Module):
         
         # return the predictions
         return predictions
- 
+
 class LenetProcessingModule(nn.Module):
     """
 	LeNet processing module model
@@ -178,8 +178,8 @@ class LenetProcessingModule(nn.Module):
         
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
-        # self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        self.pool = nn.LPPool2d(2, 2)
+        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
+        # self.pool = nn.LPPool2d(2, 2)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
@@ -209,13 +209,13 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
 
@@ -314,7 +314,7 @@ class ComplexLenet(pl.LightningModule):
 	Complex LeNet model
 	"""
 
-    def __init__(self, num_classes=10, lr=1e-3, k=2):
+    def __init__(self, num_classes=10, k=2, lr=1e-3):
         """
         Complex LeNet network
 
@@ -421,7 +421,7 @@ class ComplexLenet(pl.LightningModule):
 
 class GAN(nn.Module):
 
-    def __init__(self, k=2, lr=1e-3):
+    def __init__(self, k, lr):
         """
         GAN model used in the encoder of the complex networks
 
