@@ -104,10 +104,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', default=0, type=int,
                         help='Number of workers to use in the data loaders. Default is 0 (truly deterministic).')
                         
-    # optimizer hyperparameters
-    parser.add_argument('--lr', default=1e-3, type=float,
-                        help='Learning rate to use. Default is 1e-3.')
-                        
     # training hyperparameters
     parser.add_argument('--epochs', default=10, type=int,
                         help='Max number of epochs. Default is 10.')
@@ -133,20 +129,6 @@ if __name__ == '__main__':
                         help='Learning rate to use')
     parser.add_argument('--batch_size', default=4, type=int,
                         help='Minibatch size')
-
-    # Other hyperparameters
-    parser.add_argument('--epochs', default=2, type=int,
-                        help='Max number of epochs')
-    parser.add_argument('--seed', default=42, type=int,
-                        help='Seed to use for reproducing results')
-    parser.add_argument('--num_workers', default=2, type=int,
-                        help='Number of workers to use in the data loaders. To have a truly deterministic run, this has to be 0. ' + \
-                             'For your assignment report, you can use multiple workers (e.g. 4) and do not have to set it to 0.')
-    parser.add_argument('--log_dir', default='GAN_logs/', type=str,
-                        help='Directory where the PyTorch Lightning logs should be created.')
-    parser.add_argument('--progress_bar', action='store_true',
-                        help=('Use a progress bar indicator for interactive experimentation. '
-                              'Not to be used in conjuction with SLURM jobs'))
 
     # -------------------------
     

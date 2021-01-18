@@ -178,8 +178,8 @@ class LenetProcessingModule(nn.Module):
         
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        # self.pool = nn.LPPool2d(2, 2)
+        # self.pool = nn.MaxPool2d(2, 2, return_indices=True)
+        self.pool = nn.LPPool2d(2, 2)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
@@ -209,13 +209,13 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
 
@@ -253,7 +253,6 @@ class LenetProcessingModule(nn.Module):
 
         # x = self.fc3(x)
         x = intermediate_real+intermediate_imag
-        #print("ZO KAN IK DAT WETEN", x.shape)
         return x
     
     @property
