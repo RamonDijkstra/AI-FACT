@@ -40,18 +40,18 @@ usage: main_pl.py [-h] [--model MODEL] [--dataset DATASET]
 
 optional arguments:
   -h, --help            	Show help message and exit.
-  --model MODEL				Model to use. Options: ['LeNet', 'ResNet']. Default is 'LeNet'.
-  --dataset DATASET			Dataset to use. Only certain combinations with models are allowed. Default is 'CIFAR-10'.
-							LeNet - ['CIFAR-10', 'CIFAR-100']
-							ResNet - ['?', '?']
+  --model MODEL			Model to use. Options: ['LeNet', 'ResNet']. Default is 'LeNet'.
+  --dataset DATASET		Dataset to use. Only certain combinations with models are allowed. Default is 'CIFAR-10'.
+					LeNet - ['CIFAR-10', 'CIFAR-100']
+					ResNet - ['?', '?']
   --batch_size BATCH_SIZE	Batch size. Accepts int values. Default is 256.
   --num_workers NUM_WORKERS	Number of workers for the dataloader. Accepts int values. Default is 0 (truly deterministic). 
-  --epochs EPOCHS			Number of epochs used in training. Accepts int values Default is 10.
-  --k K						Level of k-anonimity. K-1 fake features are used when training. Accepts int values. Default is 2.
-  --log_dir LOG_DIR			Directory for the PyTorch Lightning logs. Accepts string values. Default is 'complex_logs/'.
-  --progress_bar 			Whether to show a statusbar on the training progress or not.
-  --seed SEED				Seed used for reproducability. Accepts int values. Default is 42.
-  --lr LR					Learning rate to use for the model. Accepts int or float values. Default is 3e-4.
+  --epochs EPOCHS		Number of epochs used in training. Accepts int values Default is 10.
+  --k K				Level of k-anonimity. K-1 fake features are used when training. Accepts int values. Default is 2.
+  --log_dir LOG_DIR		Directory for the PyTorch Lightning logs. Accepts string values. Default is 'complex_logs/'.
+  --progress_bar 		Whether to show a statusbar on the training progress or not.
+  --seed SEED			Seed used for reproducability. Accepts int values. Default is 42.
+  --lr LR			Learning rate to use for the model. Accepts int or float values. Default is 3e-4.
 ```
 
 ## Authors
