@@ -26,6 +26,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from models.lenet import *
 from dataloaders.cifar10_loader import load_data
 from models.complex_lenet_v3 import *
+from models.resnet_model import *
 
 
 def train_model(args):
@@ -64,7 +65,9 @@ def train_model(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # TODO: make models variable depending on command line arguments
     num_classes = len(classes)
-    model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
+    # Depending on model
+    model = ComplexResnet(num_classes=num_classes, lr=args.lr, k=args.k, num_blocks=[19,18,18])
+    # model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
 
     # show the progress bar if enabled
     if not args.progress_bar:
