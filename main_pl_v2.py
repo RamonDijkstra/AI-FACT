@@ -32,7 +32,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from models.lenet.lenet import *
 from models.complex_lenet.complex_lenet_v3 import *
 from models.alexnet.alexnet import *
-
+from models.resnet.resnet import *
 
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
@@ -43,6 +43,7 @@ model_dict = {}
 model_dict['Complex_LeNet'] = ComplexLenet
 model_dict['LeNet'] = LeNet
 model_dict['AlexNet'] = AlexNet
+model_dict['ResNet'] = ResNetPL
 #model_dict['ResNet-56'] = ComplexResnet
 
 # initialize our dataset dictionary
@@ -83,6 +84,7 @@ def train_model(args):
     # initialize the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     num_classes = len(classes)
+
     # Depending on model
     #model = ComplexResnet(num_classes=num_classes, lr=args.lr, k=args.k, num_blocks=[19,18,18])
     # model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
@@ -151,7 +153,7 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--model', default='LeNet', type=str,
                         help='What complex model to use. Default is normal LeNet.',
-                        choices=['LeNet', 'ResNet-56', 'Complex_LeNet', 'AlexNet'])
+                        choices=['LeNet', 'ResNet-56', 'Complex_LeNet', 'AlexNet', 'ResNet'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
