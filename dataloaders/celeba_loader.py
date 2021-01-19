@@ -32,12 +32,12 @@ def load_data(batch_size=128, num_workers=2):
     [transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-	trainset = torchvision.datasets.CelebA(root='./data/celeba', train=True,
+	trainset = torchvision.datasets.CelebA(root='./data/celeba', split='train',
                                         download=True, transform=transform)
 	trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                           shuffle=True, num_workers=num_workers)
 
-	testset = torchvision.datasets.CelebA(root='./data/celeba', train=False,
+	testset = torchvision.datasets.CelebA(root='./data/celeba', split='test',
                                        download=True, transform=transform)
 	testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False, num_workers=num_workers)
