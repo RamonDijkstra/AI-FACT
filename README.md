@@ -38,10 +38,10 @@ usage: main_pl.py [-h] [--model MODEL] [--dataset DATASET]
 
 optional arguments:
   -h, --help            	Show help message and exit.
-  --model MODEL			Model to use. Options: ['LeNet', 'ResNet']. Default is 'LeNet'.
+  --model MODEL			Model to use. Options: ['LeNet', 'ResNet-56']. Default is 'LeNet'.
   --dataset DATASET		Dataset to use. Only certain combinations with models are allowed. Default is 'CIFAR-10'.
 					LeNet - ['CIFAR-10', 'CIFAR-100']
-					ResNet - ['?', '?']
+					ResNet-56 - ['CIFAR-10', 'CIFAR-100']
   --batch_size BATCH_SIZE	Batch size. Accepts int values. Default is 256.
   --num_workers NUM_WORKERS	Number of workers for the dataloader. Accepts int values. Default is 0 (truly deterministic). 
   --epochs EPOCHS		Number of epochs used in training. Accepts int values Default is 10.
