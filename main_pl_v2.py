@@ -27,24 +27,27 @@ import torch.optim as optim
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-
-# Import models and dataloaders
+# import models
 from models.lenet.lenet import *
-from models.complex_lenet.complex_lenet_v3 import *
+from models.lenet.complex_lenet import *
 from models.alexnet.alexnet import *
-from models.resnet.resnet import *
+from models.alexnet.complex_alexnet import *
+from models.resnet56.resnet56 import *
+from models.resnet56.complex_resnet56 import *
 
+# import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
 from dataloaders.celeba_loader import load_data as load_celeba_data
 
 # initialize our model dictionary
 model_dict = {}
-model_dict['Complex_LeNet'] = ComplexLenet
 model_dict['LeNet'] = LeNet
+model_dict['Complex_LeNet'] = ComplexLeNet
 model_dict['AlexNet'] = AlexNet
-model_dict['ResNet'] = ResNetPL
-#model_dict['ResNet-56'] = ComplexResnet
+model_dict['Complex_AlexNet'] = ComplexAlexNet
+model_dict['ResNet-56'] = ResNet56
+model_dict['Complex_ResNet-56'] = ComplexResNet56
 
 # initialize our dataset dictionary
 dataset_dict = {}
@@ -151,9 +154,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     # model hyperparameters
-    parser.add_argument('--model', default='LeNet', type=str,
-                        help='What complex model to use. Default is normal LeNet.',
-                        choices=['LeNet', 'ResNet-56', 'Complex_LeNet', 'AlexNet', 'ResNet'])
+    parser.add_argument('--model', default='Complex_LeNet', type=str,
+                        help='What model to use. Default is Complex_LeNet.',
+                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
