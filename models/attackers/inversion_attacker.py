@@ -140,12 +140,25 @@ class UNet(pl.LightningModule):
         out = self.head(out)
         if self.retain_dim:
             out = F.interpolate(out, self.out_sz)
-        # print(out.shape, x.shape)
         loss = self.loss_fn(out, x)
 
         self.log("total/loss", loss)
 
         return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, _ = batch
+        enc_ftrs = self.encoder(x)
+        out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
+        out = self.head(out)
+        if self.retain_dim:
+            out = F.interpolate(out, self.out_sz)
+
+        loss = self.loss_fn(out, x)
+
+        self.log("val/loss", loss)
+        return loss
+
 
     def test_step(self, batch, batch_idx):
         x, labels = batch
