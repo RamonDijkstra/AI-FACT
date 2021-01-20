@@ -5,3 +5,5 @@ data/
 GAN_logs/
 __pycache__/
 complex_logs/
+attacker_logs/
+saved_models/

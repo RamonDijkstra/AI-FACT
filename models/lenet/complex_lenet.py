@@ -208,14 +208,8 @@ class LenetProcessingModule(nn.Module):
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
 
-        # print(intermediate_real)
-        # print(intermediate_imag)
-        # with torch.no_grad():
-        #     x = intermediate_real + intermediate_imag * 1j
         x = torch.complex(intermediate_real, intermediate_imag)
-        #  print(x)
 
-        # a = b
         return x
     
     @property

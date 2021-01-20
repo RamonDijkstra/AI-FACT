@@ -18,127 +18,145 @@
 Model for inversion attacks
 """
 
+# Adapted from https://amaarora.github.io/2020/09/13/unet.html
+
+import argparse
+import os
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 import torchvision
-import torchvision.transforms as transforms
 
-class DoubleConv(nn.Module):
-    """
-	Double convolution layer. 
-	Adapted from https://github.com/milesial/Pytorch-UNet
-	"""
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
-    def __init__(self, in_channels, out_channels, mid_channels=None):
+class Block(nn.Module):
+    def __init__(self, in_ch, out_ch):
         super().__init__()
-        if not mid_channels:
-            mid_channels = out_channels
-        self.double_conv = nn.Sequential(
-            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(mid_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+        self.layers = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1)
         )
-
+    
     def forward(self, x):
-        return self.double_conv(x)
-		
-class Down(nn.Module):
-    """
-	Downscaling with maxpool then double convolution.
-	Adapted from https://github.com/milesial/Pytorch-UNet
-	"""
+        return self.layers(x)
 
-    def __init__(self, in_channels, out_channels):
+
+class Encoder(nn.Module):
+    def __init__(self, chs=(3,64,128,256,512,1024)):
         super().__init__()
-        self.maxpool_conv = nn.Sequential(
-            nn.MaxPool2d(2),
-            DoubleConv(in_channels, out_channels)
-        )
-
+        self.enc_blocks = nn.ModuleList([Block(chs[i], chs[i+1]) for i in range(len(chs)-1)])
+        self.pool = nn.MaxPool2d(2)
+    
     def forward(self, x):
-        return self.maxpool_conv(x)
+        ftrs = []
+        for block in self.enc_blocks:
+            x = block(x)
+            ftrs.append(x)
+            x = self.pool(x)
+        return ftrs
 
 
-class Up(nn.Module):
-    """
-	Upscaling then double convolution.
-	Adapted from https://github.com/milesial/Pytorch-UNet
-	"""
-
-    def __init__(self, in_channels, out_channels, bilinear=True):
+class Decoder(nn.Module):
+    def __init__(self, chs=(1024, 512, 256, 128, 64)):
         super().__init__()
-
-        # if bilinear, use the normal convolutions to reduce the number of channels
-        if bilinear:
-            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
-        else:
-            self.up = nn.ConvTranspose2d(in_channels , in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConv(in_channels, out_channels)
-
-
-    def forward(self, x1, x2):
-        x1 = self.up(x1)
-        # input is CHW
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
-        # if you have padding issues, see
-        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
-        x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
-		
-class OutConv(nn.Module):
-	"""
-	Output convolution.
-	Adapted from https://github.com/milesial/Pytorch-UNet
-	"""
-	
-    def __init__(self, in_channels, out_channels):
-        super(OutConv, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-
-    def forward(self, x):
-        return self.conv(x)
+        self.chs = chs
+        self.upconvs = nn.ModuleList([nn.ConvTranspose2d(chs[i], chs[i+1], 2, 2) for i in range(len(chs)-1)])
+        self.dec_blocks = nn.ModuleList([Block(chs[i], chs[i+1]) for i in range(len(chs)-1)])
+        
+    def forward(self, x, encoder_features):
+        for i in range(len(self.chs)-1):
+            x = self.upconvs[i](x)
+            enc_ftrs = self.crop(encoder_features[i], x)
+            x = torch.cat([x, enc_ftrs], dim=1)
+            x = self.dec_blocks[i](x)
+        return x
+    
+    def crop(self, enc_ftrs, x):
+        _, _, H, W = x.shape
+        enc_ftrs = torchvision.transforms.CenterCrop([H, W])(enc_ftrs)
+        return enc_ftrs
 
 
-class InversionAttacker(nn.Module):
-	"""
-	Inversion attack model
-	"""
+class UNet(pl.LightningModule):
+    def __init__(self, enc_chs=(3,64,128,256,512,1024), dec_chs=(1024, 512, 256, 128, 64), num_classes=3, retain_dim=True, out_sz=(32,32), training=True, lr=3e-4):
+        super().__init__()
+        self.training = training
+        self.upsample = nn.Upsample(scale_factor=2)
+        self.encoder = Encoder(enc_chs)
+        self.decoder = Decoder(dec_chs)
+        self.out_sz = out_sz
+        self.head = nn.Conv2d(dec_chs[-1], num_classes, 1)
+        self.retain_dim = retain_dim
+        self.loss_fn = nn.MSELoss(reduction='sum')
+        self.lr = lr
 
-    def __init__(self, encoded_feature_shape=[1, 28, 28], image_shape=[1, 28, 28]):
+    def configure_optimizers(self):
         """
-        Network for inversion attacks based on the U-net.
-
-        Inputs:
-			encoded_feature_shape - Shape of the encoded feature. The model will try to 
-				reconstruct the original feature from the encoded feature.
-			image_shape - Shape of the original images. The output will be a reconstructed image.
+        Function to configure the optimizers
         """
-        super().__init__()
-		
-        raise NotImplementedError
+        # initialize optimizer for the entire model
+        model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        
+        # return the optimizer
+        return model_optimizer
 
-    def forward(self, encoded_feature):
+    def training_step(self, batch, optimizer_idx):
         """
         Inputs:
-            encoded_feature - Input batch of encoded features. Shape: [B, ?, ?]
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
+                True when training
+                False when using in application
         Outputs:
-			reconstructed_image - Generated original image of shape 
-				[B,image_shape[0],image_shape[1],image_shape[2]]
+			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+            labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
-		
-        raise NotImplementedError
 
-    @property
-    def device(self):
-        """
-        Property function to get the device on which the model is
-        """
-        return next(self.parameters()).device
+        x, _ = batch
+        if not self.training:
+            x = self.upsample(x)
+        enc_ftrs = self.encoder(x)
+        out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
+        out = self.head(out)
+        if self.retain_dim:
+            out = F.interpolate(out, self.out_sz)
+        # print(out.shape, x.shape)
+        loss = self.loss_fn(out, x)
+
+        self.log("total/loss", loss)
+
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        x, labels = batch
+        if not self.training:
+            batch = self.upsample(batch)
+        enc_ftrs = self.encoder(batch)
+        out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
+        out = self.head(out)
+        if self.retain_dim:
+            out = F.interpolate(out, self.out_sz)
+
+        loss = self.loss_fn(out, x)
+        self.log("total/loss", loss)
+        return loss
