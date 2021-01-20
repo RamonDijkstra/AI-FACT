@@ -71,7 +71,7 @@ def train_model(args):
 
     early_stop_callback = EarlyStopping(
         monitor='val/loss',
-        min_delta=30.00,
+        min_delta=0.005,
         patience=3,
         verbose=False,
         mode='min'
