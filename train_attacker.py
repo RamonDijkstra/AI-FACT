@@ -28,9 +28,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Subset
-
 # import models
 from models.attackers.inversion_attacker import *
 
@@ -82,12 +79,13 @@ def train_model(args):
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
-                         checkpoint_callback=ModelCheckpoint(
-                             save_weights_only=True),
-                         gpus=1 if torch.cuda.is_available() else 0,
-                         max_epochs=args.epochs,
-                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
-                         callbacks=[early_stop_callback])
+                        checkpoint_callback=ModelCheckpoint(
+                            save_weights_only=True
+                        ),
+                        gpus=1 if torch.cuda.is_available() else 0,
+                        max_epochs=args.epochs,
+                        progress_bar_refresh_rate=1 if args.progress_bar else 0,
+                        callbacks=[early_stop_callback])
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -105,8 +103,14 @@ def train_model(args):
 
     # Depending on model
     model = initialize_model(args.model, num_classes, args.lr, args.k)
+
     if args.load_dict:
-        model.load_state_dict(torch.load(args.load_dict))
+        model = model.load_from_checkpoint(
+            checkpoint_path="attacker_logs\lightning_logs\\version_26\checkpoints\epoch=17.ckpt",
+            hparams_file="attacker_logs\lightning_logs\\version_26\hparams.yml",
+            # map_location=None
+        )
+        # model.load_state_dict(torch.load(args.load_dict))
     else:
         # train the model
         trainer.fit(model, trainloader, valloader)
@@ -119,7 +123,7 @@ def train_model(args):
     torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(idx) + '.pt')
 
     # test the model
-    trainer.test(test_dataloaders=testloader)
+    trainer.test(model=model, test_dataloaders=testloader)
 
     # return the model
     return model
