@@ -34,6 +34,9 @@ from models.alexnet.alexnet import *
 from models.alexnet.complex_alexnet import *
 from models.resnet56.resnet56 import *
 from models.resnet56.complex_resnet56 import *
+from models.resnet110.resnet110 import *
+from models.resnet110.complex_resnet110 import *
+
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
@@ -46,8 +49,12 @@ model_dict['LeNet'] = LeNet
 model_dict['Complex_LeNet'] = ComplexLeNet
 model_dict['AlexNet'] = AlexNet
 model_dict['Complex_AlexNet'] = ComplexAlexNet
+model_dict['ResNet-110'] = ResNet110
 model_dict['ResNet-56'] = ResNet56
 model_dict['Complex_ResNet-56'] = ComplexResNet56
+model_dict['Complex_ResNet-110'] = ComplexResNet110
+
+### Note that Complex ResNet are the alpha variants
 
 # initialize our dataset dictionary
 dataset_dict = {}
@@ -70,7 +77,9 @@ def train_model(args):
     os.makedirs(args.log_dir, exist_ok=True)
     
     # load the data from the dataloader  
+    print(args.dataset)
     classes, trainloader, testloader = load_data(args.dataset, args.batch_size, args.num_workers)
+
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
@@ -86,12 +95,14 @@ def train_model(args):
     
     # initialize the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    num_classes = len(classes)
+    num_classes = classes
 
     # Depending on model
     #model = ComplexResnet(num_classes=num_classes, lr=args.lr, k=args.k, num_blocks=[19,18,18])
     # model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
     model = initialize_model(args.model, num_classes, args.lr, args.k)
+
+    print(model)
 
     # show the progress bar if enabled
     if not args.progress_bar:
@@ -156,7 +167,7 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
-                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56'])
+                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
