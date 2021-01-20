@@ -26,6 +26,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
 
 # import models
 from models.attackers.inversion_attacker import *
@@ -64,7 +68,17 @@ def train_model(args):
     os.makedirs(args.log_dir, exist_ok=True)
     
     # load the data from the dataloader  
-    classes, trainloader, testloader = load_data(args.dataset, args.batch_size, args.num_workers)
+    classes, trainloader, valloader, testloader = load_data_fn(
+        args.dataset, args.batch_size, args.num_workers
+    )
+
+    early_stop_callback = EarlyStopping(
+        monitor='val/loss',
+        min_delta=50.00,
+        patience=3,
+        verbose=False,
+        mode='min'
+    )
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
@@ -72,7 +86,8 @@ def train_model(args):
                              save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_epochs=args.epochs,
-                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
+                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
+                         callbacks=[early_stop_callback])
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -82,26 +97,25 @@ def train_model(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     num_classes = 3
 
-    # Depending on model
-    model = initialize_model(args.model, num_classes, args.lr, args.k)
-    if args.load_dict:
-        model.load_state_dict(torch.load(args.load_dict))
-
     # show the progress bar if enabled
     if not args.progress_bar:
         print("\nThe progress bar has been surpressed. For updates on the training progress, " + \
               "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
               "want to see the progress bar, use the argparse option \"progress_bar\".\n")
 
-    # train the model
-    trainer.fit(model, trainloader)
-    
+    # Depending on model
+    model = initialize_model(args.model, num_classes, args.lr, args.k)
+    if args.load_dict:
+        model.load_state_dict(torch.load(args.load_dict))
+    else:
+        # train the model
+        trainer.fit(model, trainloader, valloader)
+
+    # save the model    
     path = 'saved_models/'
     allfiles = [f for f in listdir(path) if isfile(join(path, f))]
     last_file = allfiles[len(allfiles)-1]
     idx = int(last_file[len(last_file[:-4])]) + 1
-
-    # save the model
     torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(idx) + '.pt')
 
     # test the model
@@ -129,7 +143,7 @@ def initialize_model(model='UNet', num_classes=3, lr=3e-4, k=2):
     else:
         assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
         
-def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
+def load_data_fn(dataset='CIFAR-10', batch_size=256, num_workers=0):
     """
     Function for loading a dataset based on the given command line arguments.
     

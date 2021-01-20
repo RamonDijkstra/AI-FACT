@@ -23,26 +23,32 @@ import torchvision
 import torchvision.transforms as transforms
 
 def load_data(batch_size=128, num_workers=2):
-	'''
-    loads the CIFAR10 dataset and splits into
-	train and test sets
     '''
-	
-	transform = transforms.Compose(
+    loads the CIFAR10 dataset and splits into
+    train and test sets
+    '''
+
+    transform = transforms.Compose(
     [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-	trainset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=True,
+    trainset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=True,
                                         download=True, transform=transform)
-	trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                          shuffle=True, num_workers=num_workers)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
+                                            shuffle=True, num_workers=num_workers)
 
-	testset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=False,
-                                       download=True, transform=transform)
-	testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=num_workers)
+    testset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=False,
+                                        download=True, transform=transform)
 
-	classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    val_split = int(len(testset)/2)
+    test_split = len(testset) - val_split
+    valset, testset = torch.utils.data.random_split(testset, [val_split, test_split])
 
-	return classes, trainloader, testloader
+    valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size,
+                                            shuffle=False, num_workers=num_workers)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
+                                                shuffle=False, num_workers=num_workers)
+
+    num_classes = 10
+
+    return num_classes, trainloader, valloader, testloader
