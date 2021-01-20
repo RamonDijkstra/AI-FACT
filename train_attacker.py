@@ -71,7 +71,7 @@ def train_model(args):
 
     early_stop_callback = EarlyStopping(
         monitor='val/loss',
-        min_delta=50.00,
+        min_delta=30.00,
         patience=3,
         verbose=False,
         mode='min'
@@ -118,9 +118,7 @@ def train_model(args):
     # save the model    
     path = 'saved_models/'
     allfiles = [f for f in listdir(path) if isfile(join(path, f))]
-    last_file = allfiles[len(allfiles)-1]
-    idx = int(last_file[len(last_file[:-4])]) + 1
-    torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(idx) + '.pt')
+    torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(len(allfiles)) + '.pt')
 
     # test the model
     trainer.test(model=model, test_dataloaders=testloader)

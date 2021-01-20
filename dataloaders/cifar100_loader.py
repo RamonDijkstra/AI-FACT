@@ -42,7 +42,6 @@ def load_data(batch_size=128, num_workers=2):
 	testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                          shuffle=False, num_workers=num_workers)
 
-	classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+	classes=100
 
 	return classes, trainloader, testloader

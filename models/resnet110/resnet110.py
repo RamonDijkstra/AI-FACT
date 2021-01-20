@@ -33,7 +33,7 @@ import numpy as np
 from utils import *
 from models.encoder.GAN import EncoderGAN
 
-class ResNet56(pl.LightningModule):
+class ResNet110(pl.LightningModule):
     """
     Complex LeNet model
     """
@@ -48,7 +48,7 @@ class ResNet56(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(ResNet56, self).__init__()       
+        super(ResNet110, self).__init__()       
         self.save_hyperparameters()
 
         # save the inputs
@@ -209,14 +209,11 @@ class PreActResNetBlock(nn.Module):
         out = z + x
         return out
 
-resnet_blocks_by_name = {
-    "ResNetBlock": ResNetBlock,
-    "PreActResNetBlock": PreActResNetBlock
-}
+
 
 class ResNet(nn.Module):
 
-    def __init__(self, num_classes=100, num_blocks=[19,18,18], c_hidden=[16,32,64], act_fn_name="relu", block_name="ResNetBlock", **kwargs):
+    def __init__(self, num_classes=100, num_blocks=[37,36,36], c_hidden=[16,32,64], act_fn_name="relu", block_name="ResNetBlock", **kwargs):
         """
         Inputs: 
             num_classes - Number of classification outputs (10 for CIFAR10)
@@ -295,4 +292,9 @@ act_fn_by_name = {
     "relu": nn.ReLU,
     "leakyrelu": nn.LeakyReLU,
     "gelu": nn.GELU
+}
+
+resnet_blocks_by_name = {
+    "ResNetBlock": ResNetBlock,
+    "PreActResNetBlock": PreActResNetBlock
 }
