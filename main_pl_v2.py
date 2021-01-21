@@ -43,6 +43,9 @@ from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
 from dataloaders.celeba_loader import load_data as load_celeba_data
 
+# early stopping
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
 # initialize our model dictionary
 model_dict = {}
 model_dict['LeNet'] = LeNet
@@ -78,8 +81,17 @@ def train_model(args):
     
     # load the data from the dataloader  
     print(args.dataset)
-    classes, trainloader, testloader = load_data(args.dataset, args.batch_size, args.num_workers)
+    classes, trainloader, valloader, testloader = load_data(
+        args.dataset, args.batch_size, args.num_workers
+    )
 
+    early_stop_callback = EarlyStopping(
+        monitor='val/loss',
+        min_delta=0.005,
+        patience=3,
+        verbose=False,
+        mode='min'
+    )
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
@@ -87,7 +99,8 @@ def train_model(args):
                              save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_epochs=args.epochs,
-                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
+                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
+                         callbacks=[early_stop_callback])
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -104,6 +117,17 @@ def train_model(args):
 
     print(model)
 
+    if args.load_dict:
+        model = model.load_from_checkpoint(
+            checkpoint_path="attacker_logs\lightning_logs\\version_26\checkpoints\epoch=17.ckpt",
+            hparams_file="attacker_logs\lightning_logs\\version_26\hparams.yml",
+            # map_location=None
+        )
+        # model.load_state_dict(torch.load(args.load_dict))
+    else:
+        # train the model
+        trainer.fit(model, trainloader, valloader)
+
     # show the progress bar if enabled
     if not args.progress_bar:
         print("\nThe progress bar has been surpressed. For updates on the training progress, " + \
@@ -114,7 +138,7 @@ def train_model(args):
     trainer.fit(model, trainloader)
 
     # test the model
-    trainer.test(test_dataloaders=testloader)
+    trainer.test(model=model, test_dataloaders=testloader)
 
     # return the model
     return model
@@ -185,6 +209,8 @@ if __name__ == '__main__':
                         help='Level of anonimity to use during training. k-1 fake features are generated to train the encoder. Default is 2,')                   
     parser.add_argument('--log_dir', default='complex_logs/', type=str,
                         help='Directory where the PyTorch Lightning logs are created. Default is GAN_logs/.')
+    parser.add_argument('--load_dict', default=None, type=str,
+                        help='Directory where the model is stored. Default is inference_attack_model.')
     parser.add_argument('--progress_bar', action='store_true',
                         help='Use a progress bar indicator. Disabled by default.')
     parser.add_argument('--seed', default=42, type=int,
