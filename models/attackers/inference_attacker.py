@@ -24,7 +24,7 @@ import torchvision.transforms as transforms
 import torchvision.models as models
 
 
-class InversionAttacker(nn.Module):
+class InferenceAttacker(nn.Module):
 	"""
 	Inference attack model
 	"""
@@ -64,6 +64,22 @@ class InversionAttacker(nn.Module):
         """
 		
         raise NotImplementedError
+
+    def training_step(self):
+        # raw images to identify hidden properties
+        # CIFAR-100 - ResNet-56, as prototype model.
+        # attacker net also ResNet-56,
+
+    def test_step(self):
+        #Use outcome of inversion attack 1 to identify hidden properties and compare
+
+        # INPUT: dec(a*) from inversion attack 1
+        # According to the paper:
+        #   accuracy of the DNN on CIFAR-100 was evaluated by the classification error of the major 20 superclasses, 
+        #   and the privacy was gauged by the classification error of the 100 minor classes.
+
+
+
 
     @property
     def device(self):
