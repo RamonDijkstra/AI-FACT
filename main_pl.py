@@ -65,6 +65,18 @@ dataset_dict['CIFAR-10'] = load_cifar10_data
 dataset_dict['CIFAR-100'] = load_cifar100_data
 dataset_dict['CelebA'] = load_celeba_data
 
+# initialize our early stopping dictionary
+stop_criteria_dict = {}
+stop_criteria_dict['LeNet'] = EarlyStopping(
+        monitor='val_loss',
+        min_delta=0.005,
+        patience=3,
+        verbose=False,
+        mode='min'
+    )
+stop_criteria_dict['Complex_LeNet'] = stop_criteria_dict['LeNet']
+# TODO: alle stop criteria toevoegen
+
 def train_model(args):
     """
     Function for training and testing a model.
@@ -76,31 +88,43 @@ def train_model(args):
     # DEBUG
     torch.autograd.set_detect_anomaly(True)
     
+    # print the most important arguments given by the user
+    print('Model: ' + args.model)
+    print('Dataset: ' + args.dataset)
+    print('Epochs: ' + str(args.epochs))
+    print('K value: ' + str(args.k))
+    print('Learning rate: ' + str(args.lr))
+    print('Early stopping: ' + str(args.early_stopping))
+    
     # make folder for the Lightning logs
     os.makedirs(args.log_dir, exist_ok=True)
     
     # load the data from the dataloader  
-    print(args.dataset)
-    classes, trainloader, valloader, testloader = load_data(
+    num_classes, trainloader, valloader, testloader = load_data(
         args.dataset, args.batch_size, args.num_workers
     )
 
-    early_stop_callback = EarlyStopping(
-        monitor='val/loss',
-        min_delta=0.005,
-        patience=3,
-        verbose=False,
-        mode='min'
-    )
+    # check whether to use early stopping
+    if args.early_stopping:
+        # initialize the stopping criteria
+        early_stop_callback = initialize_early_stop(args.model)
 
-    # initialize the Lightning trainer
-    trainer = pl.Trainer(default_root_dir=args.log_dir,
+        # initialize the Lightning trainer
+        trainer = pl.Trainer(default_root_dir=args.log_dir,
                          checkpoint_callback=ModelCheckpoint(
                              save_weights_only=True),
                          gpus=1 if torch.cuda.is_available() else 0,
                          max_epochs=args.epochs,
                          progress_bar_refresh_rate=1 if args.progress_bar else 0,
                          callbacks=[early_stop_callback])
+    else:
+        # initialize the Lightning trainer
+        trainer = pl.Trainer(default_root_dir=args.log_dir,
+                         checkpoint_callback=ModelCheckpoint(
+                             save_weights_only=True),
+                         gpus=1 if torch.cuda.is_available() else 0,
+                         max_epochs=args.epochs,
+                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -108,15 +132,9 @@ def train_model(args):
     
     # initialize the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    num_classes = classes
-
-    # Depending on model
-    #model = ComplexResnet(num_classes=num_classes, lr=args.lr, k=args.k, num_blocks=[19,18,18])
-    # model = ComplexLenet(num_classes=num_classes, lr=args.lr, k=args.k)
     model = initialize_model(args.model, num_classes, args.lr, args.k)
 
-    print(model)
-
+    # load the pre-trained model if directory has been given
     if args.load_dict:
         model = model.load_from_checkpoint(
             checkpoint_path="complex_logs/lightning_logs/version_4/checkpoints/epoch=9-v0.ckpt",
@@ -134,21 +152,18 @@ def train_model(args):
               "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
               "want to see the progress bar, use the argparse option \"progress_bar\".\n")
 
-    # train the model
-    trainer.fit(model, trainloader)
-
     # test the model
     trainer.test(model=model, test_dataloaders=testloader)
 
     # return the model
     return model
 
-def initialize_model(model='LeNet', num_classes=10, lr=3e-4, k=2):
+def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
     """
     Function for initializing a model based on the given command line arguments.
     
     Inputs:
-        model - String indicating the model to use. Default = 'LeNet'
+        model - String indicating the model to use. Default = 'Complex_LeNet'
         num_classes - Int indicating the number of classes. Default = 10
         lr - Float indicating the optimizer learning rate. Default = 3e-4
         k - Level of anonimity. k-1 fake features are generated
@@ -178,6 +193,21 @@ def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     # alert the user if the given dataset does not exist
     else:
         assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
+
+def initialize_early_stop(model='Complex_LeNet'):
+    """
+    Function for initializing a early stopping criteria.
+    
+    Inputs:
+        model - String indicating the model to use. Default = 'Complex_LeNet'
+    """
+    
+    # initialize the criteria if possible
+    if model in stop_criteria_dict:
+        return stop_criteria_dict[model]
+    # alert the user if the given model does not exist
+    else:
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
 
 if __name__ == '__main__':
     """
@@ -215,6 +245,8 @@ if __name__ == '__main__':
                         help='Use a progress bar indicator. Disabled by default.')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results. Default is 42.')
+    parser.add_argument('--early_stopping', default=True, type=bool,
+                        help='Whether to use early stopping or not. Default is True.')
                         
     # optimizer hyperparameters
     parser.add_argument('--lr', default=3e-4, type=float,

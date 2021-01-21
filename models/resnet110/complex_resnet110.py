@@ -24,7 +24,7 @@ from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from ..utils import *
+from utils import *
 from models.encoder.GAN import EncoderGAN
 
 class ComplexResNet110(pl.LightningModule):

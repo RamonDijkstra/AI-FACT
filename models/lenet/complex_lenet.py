@@ -29,6 +29,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 import numpy as np
+
 from utils import *
 from models.encoder.GAN import EncoderGAN
 
@@ -57,7 +58,7 @@ class ComplexLeNet(pl.LightningModule):
 
         # initialize the different modules of the network
         encoder_conv = nn.Conv2d(3, 6, 5)
-        self.encoder = EncoderGAN(encoder_conv, self.k, self.lr)
+        self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
         self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
         self.softmax = nn.Softmax()
@@ -78,6 +79,8 @@ class ComplexLeNet(pl.LightningModule):
 
     def training_step(self, batch, optimizer_idx):
         """
+        Training step of the complex LeNet model.
+        
         Inputs:
             image_batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -116,7 +119,6 @@ class ComplexLeNet(pl.LightningModule):
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
         model_loss = self.loss_fn(result, labels)
-        
         loss = gan_loss + model_loss
 
         # log the loss
@@ -125,8 +127,31 @@ class ComplexLeNet(pl.LightningModule):
         self.log("total/loss", loss)
 
         return loss
-
-    def test_step(self, batch, batch_idx):
+        
+    def validation_step(self, batch, batch_idx):
+        """
+        Validation step of the complex LeNet model.
+        
+        Inputs:
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
+                True when training
+                False when using in application
+        Outputs:
+			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+            labels - Real labels of the encoded features. Shape: [B * k, 1]
+        """
+        
+        # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
@@ -135,13 +160,59 @@ class ComplexLeNet(pl.LightningModule):
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
         
-        # decode the feature from
+        # decode the feature from the processing unit
         result = self.decoder(out, thetas)
+        
+        # calculate the predictions
         result = self.softmax(result)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
+        
+        # log the validation accuracy
+        self.log('val_acc', acc)
 
-        self.log('test_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
+    def test_step(self, batch, batch_idx):
+        """
+        Test step of the complex LeNet model.
+        
+        Inputs:
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            training - Boolean value. Default = True
+                True when training
+                False when using in application
+        Outputs:
+			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+            labels - Real labels of the encoded features. Shape: [B * k, 1]
+        """
+        
+        # divide the batch in images and labels
+        x, labels = batch
+
+        # run the image batch through the encoder (generator and discriminator)
+        gan_loss, out, thetas = self.encoder(x, False)
+        
+        # send the encoded feature to the processing unit
+        out = self.proccessing_module(out)
+        
+        # decode the feature from the processing unit
+        result = self.decoder(out, thetas)
+        
+        # calculate the predictions
+        result = self.softmax(result)
+        preds = result.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
+        
+        # log the test accuracy
+        self.log('test_acc', acc)
 
 class LenetProcessingModule(nn.Module):
     """

@@ -36,11 +36,12 @@ class EncoderGAN(nn.Module):
         GAN model used as the encoder of the complex networks.
 
         Inputs:
+            encoding_layer - PyTorch module (e.g. sequential) representing 
+                the first layers of the model in the encoder.
+            discrim_shape - Size of the discriminator input.
             k - Level of anonimity. k-1 fake features are generated
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
-            encoding_layer - PyTorch module (e.g. sequential) representing 
-                the first layers of the model in the encoder.
         """
         super().__init__()
         
@@ -170,11 +171,11 @@ class Generator(nn.Module):
         Generator model of the encoder
 
         Inputs:
-            k - Level of anonimity. k-1 fake features are generated
-                to obscure the real feature. Default = 2
             device - PyTorch device used to run the model on.
             encoding_layer - PyTorch module (e.g. sequential) representing 
                 the first layers of the model in the encoder.
+            k - Level of anonimity. k-1 fake features are generated
+                to obscure the real feature. Default = 2
         """
         super().__init__()
 
@@ -214,7 +215,6 @@ class Generator(nn.Module):
         # create real obfuscating features b
         b = torch.normal(0, 1, size=tuple((image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3])))
         b = b.to(self.device)
-        # b_magnitude = torch.sqrt(torch.sum(torch.square(b)).type(torch.FloatTensor))
         b_magnitude = torch.norm(torch.norm(b, dim=(2,3), keepdim=True), dim=1, keepdim=True)
         b = (b / b_magnitude) * a_magnitude
 
@@ -229,9 +229,10 @@ class Generator(nn.Module):
         # check if training
         if training:      
             # create fake obfuscating features b
+            fake_a_magnitude = torch.cat([a_magnitude]*(self.k-1),dim=0)
             fake_b = torch.normal(0, 1, size=tuple(((self.k-1) * image_dimensions[0], image_dimensions[1], image_dimensions[2], image_dimensions[3]))).to(self.device)
             fake_b_magnitude = torch.norm(torch.norm(fake_b, dim=(2,3), keepdim=True), dim=1, keepdim=True)
-            fake_b = (fake_b / fake_b_magnitude)* a_magnitude
+            fake_b = (fake_b / fake_b_magnitude)* fake_a_magnitude
         
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
@@ -259,6 +260,7 @@ class Discriminator(nn.Module):
         
         Inputs:
             device - PyTorch device used to run the model on.
+            discrim_shape - Size of the discriminator input.
         """
         super().__init__()
         
@@ -290,7 +292,7 @@ class Discriminator(nn.Module):
         encoded_batch = encoded_batch.real
         
         # reshape the batch
-        encoded_batch = encoded_batch.view(encoded_batch.shape[0],self.discrim_shape).to(self.device)
+        encoded_batch = encoded_batch.view(encoded_batch.shape[0], self.discrim_shape).to(self.device)
         
         # predict the labels
         predictions = self.linear(encoded_batch)
