@@ -119,8 +119,8 @@ def train_model(args):
 
     if args.load_dict:
         model = model.load_from_checkpoint(
-            checkpoint_path="attacker_logs\lightning_logs\\version_26\checkpoints\epoch=17.ckpt",
-            hparams_file="attacker_logs\lightning_logs\\version_26\hparams.yml",
+            checkpoint_path="complex_logs/lightning_logs/version_4/checkpoints/epoch=9-v0.ckpt",
+            hparams_file="complex_logs/lightning_logs/version_4/hparams.yml",
             # map_location=None
         )
         # model.load_state_dict(torch.load(args.load_dict))
