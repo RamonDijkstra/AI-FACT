@@ -31,7 +31,7 @@ class EncoderGAN(nn.Module):
 	Encoder GAN model.
 	"""
 
-    def __init__(self, encoding_layer, k=2, lr=3e-4):
+    def __init__(self, encoding_layer, discrim_shape, k=2, lr=3e-4):
         """
         GAN model used as the encoder of the complex networks.
 
@@ -51,7 +51,7 @@ class EncoderGAN(nn.Module):
         # initialize the generator and discriminator
         device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
         self.generator = Generator(device, encoding_layer, k)
-        self.discriminator = Discriminator(device)
+        self.discriminator = Discriminator(device, discrim_shape)
 
     def configure_optimizers(self):
         """
@@ -253,7 +253,7 @@ class Discriminator(nn.Module):
 	Discriminator part of the LeNet GAN encoder model
 	""" 
     
-    def __init__(self, device):
+    def __init__(self, device, discrim_shape):
         """
         Discriminator model of the encoder
         
@@ -266,7 +266,8 @@ class Discriminator(nn.Module):
         self.device = device
 
         # initialize the linear layer
-        self.linear = nn.Linear(6*28*28,1)
+        self.linear = nn.Linear(discrim_shape,1)
+        self.discrim_shape = discrim_shape
         
         # initialize the sigmoid layer
         self.sigmoid = nn.Sigmoid()
@@ -289,7 +290,7 @@ class Discriminator(nn.Module):
         encoded_batch = encoded_batch.real
         
         # reshape the batch
-        encoded_batch = encoded_batch.view(encoded_batch.shape[0],6*28*28).to(self.device)
+        encoded_batch = encoded_batch.view(encoded_batch.shape[0],self.discrim_shape).to(self.device)
         
         # predict the labels
         predictions = self.linear(encoded_batch)

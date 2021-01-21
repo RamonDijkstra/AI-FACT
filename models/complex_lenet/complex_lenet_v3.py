@@ -32,7 +32,7 @@ import numpy as np
 from utils import *
 from models.encoder.GAN import EncoderGAN
 
-class ComplexLeNet(pl.LightningModule):
+class ComplexLenet(pl.LightningModule):
     """
 	Complex LeNet model
 	"""
@@ -47,7 +47,7 @@ class ComplexLeNet(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(ComplexLeNet, self).__init__()       
+        super(ComplexLenet, self).__init__()       
         self.save_hyperparameters()
 
         # save the inputs
@@ -208,8 +208,14 @@ class LenetProcessingModule(nn.Module):
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
 
+        # print(intermediate_real)
+        # print(intermediate_imag)
+        # with torch.no_grad():
+        #     x = intermediate_real + intermediate_imag * 1j
         x = torch.complex(intermediate_real, intermediate_imag)
+        #  print(x)
 
+        # a = b
         return x
     
     @property
@@ -255,9 +261,9 @@ class LenetDecoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-
+        print(decoded_batch.shape)
+        print(thetas.shape)
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
-
         
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
