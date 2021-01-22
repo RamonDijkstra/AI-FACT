@@ -94,7 +94,7 @@ def train_model(args):
     print('Epochs: ' + str(args.epochs))
     print('K value: ' + str(args.k))
     print('Learning rate: ' + str(args.lr))
-    print('Early stopping: ' + str(!args.no_early_stopping))
+    print('Early stopping: ' + str(not args.no_early_stopping))
     
     # make folder for the Lightning logs
     os.makedirs(args.log_dir, exist_ok=True)
