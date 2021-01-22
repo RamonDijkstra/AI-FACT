@@ -94,7 +94,7 @@ def train_model(args):
     print('Epochs: ' + str(args.epochs))
     print('K value: ' + str(args.k))
     print('Learning rate: ' + str(args.lr))
-    print('Early stopping: ' + str(args.early_stopping))
+    print('Early stopping: ' + str(!args.no_early_stopping))
     
     # make folder for the Lightning logs
     os.makedirs(args.log_dir, exist_ok=True)
@@ -105,7 +105,15 @@ def train_model(args):
     )
 
     # check whether to use early stopping
-    if args.early_stopping:
+    if args.no_early_stopping:
+        # initialize the Lightning trainer
+        trainer = pl.Trainer(default_root_dir=args.log_dir,
+                        checkpoint_callback=ModelCheckpoint(
+                            save_weights_only=True),
+                        gpus=1 if torch.cuda.is_available() else 0,
+                        max_epochs=args.epochs,
+                        progress_bar_refresh_rate=1 if args.progress_bar else 0)
+    else:
         # initialize the stopping criteria
         early_stop_callback = initialize_early_stop(args.model)
 
@@ -117,14 +125,6 @@ def train_model(args):
                          max_epochs=args.epochs,
                          progress_bar_refresh_rate=1 if args.progress_bar else 0,
                          callbacks=[early_stop_callback])
-    else:
-        # initialize the Lightning trainer
-        trainer = pl.Trainer(default_root_dir=args.log_dir,
-                         checkpoint_callback=ModelCheckpoint(
-                             save_weights_only=True),
-                         gpus=1 if torch.cuda.is_available() else 0,
-                         max_epochs=args.epochs,
-                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -245,8 +245,8 @@ if __name__ == '__main__':
                         help='Use a progress bar indicator. Disabled by default.')
     parser.add_argument('--seed', default=42, type=int,
                         help='Seed to use for reproducing results. Default is 42.')
-    parser.add_argument('--early_stopping', default=True, type=bool,
-                        help='Whether to use early stopping or not. Default is True.')
+    parser.add_argument('--no_early_stopping', action='store_true',
+                        help='Disable early stopping. Enabled by default.')
                         
     # optimizer hyperparameters
     parser.add_argument('--lr', default=3e-4, type=float,
