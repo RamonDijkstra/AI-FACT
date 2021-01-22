@@ -27,6 +27,8 @@ import torch.optim as optim
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
+import time
+
 # import models
 from models.lenet.lenet import *
 from models.lenet.complex_lenet import *
@@ -89,12 +91,17 @@ def train_model(args):
     torch.autograd.set_detect_anomaly(True)
     
     # print the most important arguments given by the user
+    print('----- MODEL SUMMARY -----')
     print('Model: ' + args.model)
     print('Dataset: ' + args.dataset)
     print('Epochs: ' + str(args.epochs))
     print('K value: ' + str(args.k))
     print('Learning rate: ' + str(args.lr))
     print('Early stopping: ' + str(not args.no_early_stopping))
+    print('-------------------------')
+    
+    # keep track of experiment elapsed time
+    experiment_start = time.time()
     
     # make folder for the Lightning logs
     os.makedirs(args.log_dir, exist_ok=True)
@@ -136,24 +143,38 @@ def train_model(args):
 
     # load the pre-trained model if directory has been given
     if args.load_dict:
+        print('Loading model..')
         model = model.load_from_checkpoint(
             checkpoint_path="complex_logs/lightning_logs/version_4/checkpoints/epoch=9-v0.ckpt",
             hparams_file="complex_logs/lightning_logs/version_4/hparams.yml",
             # map_location=None
         )
         # model.load_state_dict(torch.load(args.load_dict))
+        print('Model successfully loaded')
     else:
+        print('Training model..')
         # train the model
         trainer.fit(model, trainloader, valloader)
+        print('Training successfull')
 
     # show the progress bar if enabled
     if not args.progress_bar:
         print("\nThe progress bar has been surpressed. For updates on the training progress, " + \
               "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
               "want to see the progress bar, use the argparse option \"progress_bar\".\n")
-
+    
+    # keep track of testing elapsed time
+    test_start = time.time()
+    
     # test the model
+    print('Testing model..')
     trainer.test(model=model, test_dataloaders=testloader)
+    print('Testing successfull')
+    
+    # print the elapsed time of experiment and testing
+    end = time.time()
+    print('Testing run-time: ' + str(end - test_start))
+    print('Experiment run-time: ' + str(end - experiment_start))
 
     # return the model
     return model

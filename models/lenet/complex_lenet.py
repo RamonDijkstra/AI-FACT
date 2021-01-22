@@ -63,7 +63,7 @@ class ComplexLeNet(pl.LightningModule):
         self.decoder = LenetDecoder(self.num_classes)
         self.softmax = nn.Softmax()
         
-        # initialize the loss function of the complex LeNet
+        # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
@@ -82,14 +82,11 @@ class ComplexLeNet(pl.LightningModule):
         Training step of the complex LeNet model.
         
         Inputs:
-            image_batch - Input batch of images. Shape: [B, C, W, H]
+            batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per image
                 W- image width
                 H - image height
-            training - Boolean value. Default = True
-                True when training
-                False when using in application
         Outputs:
 			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
                 B - batch size
@@ -99,6 +96,8 @@ class ComplexLeNet(pl.LightningModule):
             discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
             labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
+        
+        # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
@@ -110,11 +109,11 @@ class ComplexLeNet(pl.LightningModule):
         # decode the feature from
         result = self.decoder(out, thetas)
 
-        # Log the train accuracy
+        # log the train accuracy
         out = self.softmax(result)
         preds = out.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('train_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
+        self.log('train_acc', acc)
         
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
