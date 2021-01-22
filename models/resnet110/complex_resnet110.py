@@ -82,7 +82,7 @@ class ComplexResNet110(pl.LightningModule):
         print("CLASSES", self.num_classes)
         
         # initialize the loss function of the complex LeNet
-        self.loss_fn = nn.NLLLoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
         """
