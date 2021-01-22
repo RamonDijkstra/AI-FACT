@@ -29,7 +29,12 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 # import models
-from models.attackers.inversion_attacker import *
+from models.attackers.inversion_attacker_1 import *
+# from models.attackers.inversion_attacker_2 import *
+from models.lenet.complex_lenet import *
+from models.alexnet.complex_alexnet import *
+from models.resnet56.complex_resnet56 import *
+from models.resnet110.complex_resnet110 import *
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
@@ -38,6 +43,13 @@ from dataloaders.celeba_loader import load_data as load_celeba_data
 
 from os import listdir
 from os.path import isfile, join
+
+# initialize our model dictionary
+gan_model_dict = {}
+gan_model_dict['Complex_LeNet'] = ComplexLeNet
+gan_model_dict['Complex_AlexNet'] = ComplexAlexNet
+gan_model_dict['Complex_ResNet-56'] = ComplexResNet56
+gan_model_dict['Complex_ResNet-110'] = ComplexResNet110
 
 # initialize our model dictionary
 model_dict = {}
@@ -101,16 +113,33 @@ def train_model(args):
               "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
               "want to see the progress bar, use the argparse option \"progress_bar\".\n")
 
+    gan_model = initialize_gan_model(args.gan_model, num_classes, args.lr, args.k)
+    gan_model_dir = args.load_gan
+    gan_checkpoint_dir = gan_model_dir + "\checkpoints\\"
+    gan_last_ckpt = [f for f in listdir(gan_checkpoint_dir) if isfile(join(gan_checkpoint_dir, f))][-1:][0]
+    gan_checkpoint_path = gan_checkpoint_dir + gan_last_ckpt
+    gan_hparams_file = gan_model_dir + "\hparams.yml"
+    gan_model = gan_model.load_from_checkpoint(
+        checkpoint_path=gan_checkpoint_path,
+        hparams_file=gan_hparams_file
+    )
+    generator = gan_model.encoder.generator
+
     # Depending on model
-    model = initialize_model(args.model, num_classes, args.lr, args.k)
+    model = initialize_model(args.model, num_classes, args.lr, args.k, generator)
 
     if args.load_dict:
+        print('Loading model..')
+        model_dir = args.load_dict
+        checkpoint_dir = model_dir + "\checkpoints\\"
+        last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
+        checkpoint_path = checkpoint_dir + last_ckpt
+        hparams_file = model_dir + "\hparams.yml"
         model = model.load_from_checkpoint(
-            checkpoint_path="attacker_logs\lightning_logs\\version_26\checkpoints\epoch=17.ckpt",
-            hparams_file="attacker_logs\lightning_logs\\version_26\hparams.yml",
-            # map_location=None
+            checkpoint_path=checkpoint_path,
+            hparams_file=hparams_file
         )
-        # model.load_state_dict(torch.load(args.load_dict))
+        print('Model successfully loaded')
     else:
         # train the model
         trainer.fit(model, trainloader, valloader)
@@ -126,7 +155,7 @@ def train_model(args):
     # return the model
     return model
 
-def initialize_model(model='UNet', num_classes=3, lr=3e-4, k=2):
+def initialize_model(model='UNet', num_classes=3, lr=3e-4, k=2, generator=None):
     """
     Function for initializing a model based on the given command line arguments.
     
@@ -140,10 +169,29 @@ def initialize_model(model='UNet', num_classes=3, lr=3e-4, k=2):
     
     # initialize the model if possible
     if model in model_dict:
-        return model_dict[model](num_classes=num_classes, training=True)
+        return model_dict[model](generator, num_classes=num_classes, training=True)
     # alert the user if the given model does not exist
     else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
+
+def initialize_gan_model(model='Complex_LeNet', num_classes=3, lr=3e-4, k=2):
+    """
+    Function for initializing a model based on the given command line arguments.
+    
+    Inputs:
+        model - String indicating the model to use. Default = 'LeNet'
+        num_classes - Int indicating the number of classes. Default = 10
+        lr - Float indicating the optimizer learning rate. Default = 3e-4
+        k - Level of anonimity. k-1 fake features are generated
+            to train the discriminator. Default = 2
+    """
+    
+    # initialize the model if possible
+    if model in gan_model_dict:
+        return gan_model_dict[model](num_classes=num_classes)
+    # alert the user if the given model does not exist
+    else:
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
         
 def load_data_fn(dataset='CIFAR-10', batch_size=256, num_workers=0):
     """
@@ -173,6 +221,10 @@ if __name__ == '__main__':
     
     # model hyperparameters
     parser.add_argument('--model', default='UNet', type=str,
+                        help='What model to use. Default is UNet.',
+                        choices=['UNet'])
+                            # model hyperparameters
+    parser.add_argument('--gan_model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
                         choices=['UNet'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
@@ -193,6 +245,8 @@ if __name__ == '__main__':
     parser.add_argument('--log_dir', default='attacker_logs/', type=str,
                         help='Directory where the PyTorch Lightning logs are created. Default is GAN_logs/.')
     parser.add_argument('--load_dict', default=None, type=str,
+                        help='Directory where the model is stored. Default is inference_attack_model.')
+    parser.add_argument('--load_gan', default=None, type=str, required=True,
                         help='Directory where the model is stored. Default is inference_attack_model.')
     parser.add_argument('--progress_bar', action='store_true',
                         help='Use a progress bar indicator. Disabled by default.')

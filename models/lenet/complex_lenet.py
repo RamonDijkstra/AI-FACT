@@ -166,8 +166,12 @@ class ComplexLeNet(pl.LightningModule):
         result = self.softmax(result)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
+
+        model_loss = self.loss_fn(result, labels)
+        loss = gan_loss + model_loss
         
         # log the validation accuracy
+        self.log('val_loss', loss)
         self.log('val_acc', acc)
 
     def test_step(self, batch, batch_idx):

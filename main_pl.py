@@ -28,6 +28,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 import time
+from os import listdir
+from os.path import isfile, join
 
 # import models
 from models.lenet.lenet import *
@@ -144,12 +146,15 @@ def train_model(args):
     # load the pre-trained model if directory has been given
     if args.load_dict:
         print('Loading model..')
+        model_dir = args.load_dict
+        checkpoint_dir = model_dir + "\checkpoints\\"
+        last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
+        checkpoint_path = checkpoint_dir + last_ckpt
+        hparams_file = model_dir + "\hparams.yml"
         model = model.load_from_checkpoint(
-            checkpoint_path="complex_logs/lightning_logs/version_4/checkpoints/epoch=9-v0.ckpt",
-            hparams_file="complex_logs/lightning_logs/version_4/hparams.yml",
-            # map_location=None
+            checkpoint_path=checkpoint_path,
+            hparams_file=hparams_file
         )
-        # model.load_state_dict(torch.load(args.load_dict))
         print('Model successfully loaded')
     else:
         print('Training model..')

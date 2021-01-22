@@ -173,6 +173,6 @@ class UNet(pl.LightningModule):
         if self.retain_dim:
             out = F.interpolate(out, self.out_sz)
 
-        loss = self.loss_fn(normalized, x)
+        loss = self.loss_fn(out, x)
         self.log("total/reconstruction_error", loss)
         return loss
