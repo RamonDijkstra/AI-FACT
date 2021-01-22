@@ -143,7 +143,7 @@ class ComplexResNet110(pl.LightningModule):
         # return x, discriminator_predictions, labels
         #print(result.shape)
         #print(labels.shape)
-        model_loss = self.loss_fn(out, labels)
+        model_loss = self.loss_fn(result, labels)
         
         loss = gan_loss + model_loss
 

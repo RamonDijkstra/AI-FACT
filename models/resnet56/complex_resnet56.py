@@ -47,6 +47,7 @@ class ComplexResNet56(pl.LightningModule):
 
         # save the inputs
         self.num_classes = num_classes
+
         self.lr = lr
         self.k = k
 
@@ -77,9 +78,10 @@ class ComplexResNet56(pl.LightningModule):
         #self.encoder = GAN(self.k, self.lr, num_blocks[0])
         self.proccessing_module = Resnet_Processing_module(num_blocks[1])
         self.decoder = Resnet_Decoder(num_blocks[2], self.num_classes)
+        print(self.num_classes)
         self.softmax = nn.Softmax()
         
-        # initialize the loss function of the complex LeNet
+        # initialize the loss function of the complex network
         self.loss_fn = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
@@ -140,7 +142,7 @@ class ComplexResNet56(pl.LightningModule):
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
 
-        model_loss = self.loss_fn(out, labels)
+        model_loss = self.loss_fn(result, labels)
 
         
         loss = gan_loss + model_loss
