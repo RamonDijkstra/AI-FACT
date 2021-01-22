@@ -82,7 +82,7 @@ class ComplexResNet110(pl.LightningModule):
         print("CLASSES", self.num_classes)
         
         # initialize the loss function of the complex LeNet
-        self.loss_fn = nn.NLLLoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def configure_optimizers(self):
         """
@@ -143,7 +143,7 @@ class ComplexResNet110(pl.LightningModule):
         # return x, discriminator_predictions, labels
         #print(result.shape)
         #print(labels.shape)
-        model_loss = self.loss_fn(out, labels)
+        model_loss = self.loss_fn(result, labels)
         
         loss = gan_loss + model_loss
 
