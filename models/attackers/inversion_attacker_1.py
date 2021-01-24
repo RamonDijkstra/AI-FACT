@@ -97,6 +97,7 @@ class UNet(pl.LightningModule):
         self.upsample = nn.Upsample(scale_factor=2)
 
         self.gan = generator
+        # self.input_net = input_net
         self.encoder = Encoder(enc_chs)
         self.decoder = Decoder(dec_chs)
         self.out_sz = out_sz

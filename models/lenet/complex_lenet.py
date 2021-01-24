@@ -127,52 +127,52 @@ class ComplexLeNet(pl.LightningModule):
 
         return loss
         
-    def validation_step(self, batch, batch_idx):
-        """
-        Validation step of the complex LeNet model.
+    # def validation_step(self, batch, batch_idx):
+    #     """
+    #     Validation step of the complex LeNet model.
         
-        Inputs:
-            image_batch - Input batch of images. Shape: [B, C, W, H]
-                B - batch size
-                C - channels per image
-                W- image width
-                H - image height
-            training - Boolean value. Default = True
-                True when training
-                False when using in application
-        Outputs:
-			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
-                B - batch size
-                C - channels per feature
-                W- feature width
-                H - feature height
-            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
-            labels - Real labels of the encoded features. Shape: [B * k, 1]
-        """
+    #     Inputs:
+    #         image_batch - Input batch of images. Shape: [B, C, W, H]
+    #             B - batch size
+    #             C - channels per image
+    #             W- image width
+    #             H - image height
+    #         training - Boolean value. Default = True
+    #             True when training
+    #             False when using in application
+    #     Outputs:
+	# 		decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
+    #             B - batch size
+    #             C - channels per feature
+    #             W- feature width
+    #             H - feature height
+    #         discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
+    #         labels - Real labels of the encoded features. Shape: [B * k, 1]
+    #     """
         
-        # divide the batch in images and labels
-        x, labels = batch
+    #     # divide the batch in images and labels
+    #     x, labels = batch
 
-        # run the image batch through the encoder (generator and discriminator)
-        gan_loss, out, thetas = self.encoder(x, False)
+    #     # run the image batch through the encoder (generator and discriminator)
+    #     gan_loss, out, thetas = self.encoder(x, False)
         
-        # send the encoded feature to the processing unit
-        out = self.proccessing_module(out)
+    #     # send the encoded feature to the processing unit
+    #     out = self.proccessing_module(out)
         
-        # decode the feature from the processing unit
-        result = self.decoder(out, thetas)
+    #     # decode the feature from the processing unit
+    #     result = self.decoder(out, thetas)
         
-        # calculate the predictions
-        result = self.softmax(result)
-        preds = result.argmax(dim=-1)
-        acc = (labels == preds).float().mean()
+    #     # calculate the predictions
+    #     result = self.softmax(result)
+    #     preds = result.argmax(dim=-1)
+    #     acc = (labels == preds).float().mean()
 
-        model_loss = self.loss_fn(result, labels)
-        loss = gan_loss + model_loss
+    #     model_loss = self.loss_fn(result, labels)
+    #     loss = gan_loss + model_loss
         
-        # log the validation accuracy
-        self.log('val_loss', loss)
-        self.log('val_acc', acc)
+    #     # log the validation accuracy
+    #     self.log('val_loss', loss)
+    #     self.log('val_acc', acc)
 
     def test_step(self, batch, batch_idx):
         """

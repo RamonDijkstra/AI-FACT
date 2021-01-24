@@ -69,16 +69,16 @@ class ComplexResNet56(pl.LightningModule):
                                              c_out=16)
                 )
 
-        input_net = nn.Sequential(*blocks)
+        self.input_net = nn.Sequential(*blocks)
 
 
         # initialize the different modules of the network
-        self.encoder = EncoderGAN(input_net,Discriminator_linear_shape, self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net,Discriminator_linear_shape, self.k, self.lr)
 
         #self.encoder = GAN(self.k, self.lr, num_blocks[0])
         self.proccessing_module = Resnet_Processing_module(num_blocks[1])
         self.decoder = Resnet_Decoder(num_blocks[2], self.num_classes)
-        print(self.num_classes)
+        # print(self.num_classes)
         self.softmax = nn.Softmax()
         
         # initialize the loss function of the complex network

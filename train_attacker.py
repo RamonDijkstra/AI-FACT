@@ -124,9 +124,12 @@ def train_model(args):
         hparams_file=gan_hparams_file
     )
     generator = gan_model.encoder.generator
+    # input_net = gan_model.input_net
 
+    print(gan_model)
     # Depending on model
     model = initialize_model(args.model, num_classes, args.lr, args.k, generator)
+    print(model)
 
     if args.load_dict:
         print('Loading model..')
@@ -226,7 +229,7 @@ if __name__ == '__main__':
                             # model hyperparameters
     parser.add_argument('--gan_model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
-                        choices=['UNet'])
+                        choices=['Complex_LeNet', 'Complex_AlexNet', 'Complex_ResNet-56','Complex_ResNet-110'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
