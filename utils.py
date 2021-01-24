@@ -18,11 +18,13 @@
 Utility functions
 """
 
+# basic imports
+import numpy as np
+
+# pytorch imports
 import torch
-#import torch.linalg#
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 def complex_conv(x_real, x_imag, conv_real, conv_imag):
     """
@@ -45,7 +47,7 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
     # return the convolved real and imaginary parts
     return real_out, imag_out
 
-def complex_relu(x, device, c=1):
+def complex_relu(x, device, c=None):
     """
     Function to apply ReLu on complex features.
 
@@ -56,23 +58,21 @@ def complex_relu(x, device, c=1):
                 W- feature width
                 H - feature height
         device - PyTorch device used to run the model on.
-        c - Fixed constant used in the max function. Default = 1
+        c - Fixed constant used in the max function. Default = None
     Outputs:
-        result - Resulting features after ReLU. [B, ?, ?, ?]
+        result - Resulting features after ReLU. [B, C, W, H]
     """
 
     # calculate the denominator
-    norm = complex_norm(x, device)
+    norm = complex_norm(x)
 
-    #if model is RESNET: c = 1
-    #else expectation of norm
-    constant = torch.mean(norm, dim=-1, keepdim=True)
-
-
-    #TODO MISSCHIEN SHAPES FIXEN IDKKKKKK
-
-    # create the sum constant
-    # constant = torch.ones(x.shape, device=device) * c
+	# check whether to give the given value of c
+	if c is not None:
+		# use the value of c for the constant
+		constant = torch.ones(x.shape, device=device) * c
+	else:
+		# use the expectation of the norm
+		constant = torch.mean(norm, dim=-1, keepdim=True)
 
     # calculate the resulting features
     result = norm / torch.max(norm, constant)
@@ -82,9 +82,9 @@ def complex_relu(x, device, c=1):
     return result
 
 
-def complex_norm(x, device):
+def complex_norm(x):
     """
-    Function calculate norm of complex features.
+    Function calculate norm of complex and real features.
 
     Inputs:
         x - Batch of complex features. Shape: [B, C, W, H]
@@ -97,6 +97,7 @@ def complex_norm(x, device):
     """
 
     try:
+		# calculate the norm of complex valued features
         norm = torch.sqrt((x*x.conj()).real)
     except:
         # calculate the norm of a real valued feature
@@ -105,8 +106,7 @@ def complex_norm(x, device):
     # return the resulting norm
     return norm
 
-# TODO: below is not used anymore?
-def complex_max_pool(x, device, pool):
+def complex_max_pool(x, pool):
     """
     Function to apply MaxPool on complex features.
 
@@ -116,33 +116,44 @@ def complex_max_pool(x, device, pool):
                 C - channels per feature
                 W- feature width
                 H - feature height
-        pool - 
+        pool - Standard PyTorch MaxPool module.
     Outputs:
-        result - Resulting feature after MaxPool. [B, ?, ?, ?]
+        result - Resulting feature after MaxPool. Shape: [B, C, W, H]
     """
-    norm = complex_norm(x, device)
-    iets, indices = pool(norm)
+	
+	# calculate the norm
+    norm = complex_norm(x)
+	
+	# retrieve the indices of the maxpool
+    _, indices = pool(norm)
 
+	# retrieve the associated values of the indices with the highest norm
     flattened_tensor = x.flatten(start_dim=2)
     output = flattened_tensor.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
 
-    #zeros = torch.zeros_like(x)
-    #zeros[indices] = 1
-    #print(zeros.shape)
-    #print(result.shape)
-    #result = torch.where(zeros >1, x, 0)
-    #print(result.shape)
-    #result = x.view(4,16,24*24)[indices]
-    #result = torch.index_select(x, 3,indices)
+    # return the values with the highest norm
     return output
 
-def complex_batchnorm(complex_tensor, device):
+def complex_batchnorm(complex_tensor):
+	"""
+    Function to apply batch normalization on complex features.
+
+    Inputs:
+        x - Batch of complex features. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per feature
+                W- feature width
+                H - feature height
+    Outputs:
+        result - Resulting feature after batch normalization. [B, C, W, H]
+    """
+	
     ###BATCH size x Dim x Dim x Dim
 
     
     denominator = complex_tensor.view(complex_tensor.shape[0],-1)
  #   print(denominator.shape)
-    denominator = complex_norm(denominator, device)**2
+    denominator = complex_norm(denominator)**2
   #  print(denominator.shape)
     denominator = denominator.mean(dim=1)
     denominator = denominator.view(denominator.shape[0],1,1,1)

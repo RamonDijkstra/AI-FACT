@@ -18,19 +18,20 @@
 Complex LeNet model
 """
 
-# Adapted from https://github.com/wavefrontshaping/complexPyTorch
-# from complexPyTorch-master.complexFunctions import *
-# from complexPyTorch-master.complexLayers import *
+# basic imports
+import numpy as np
 
+# pytorch imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-import numpy as np
-
+# import utility functions (all complex functions)
 from utils import *
+
+# import encoder GAN model
 from models.encoder.GAN import EncoderGAN
 
 class ComplexLeNet(pl.LightningModule):
@@ -87,14 +88,10 @@ class ComplexLeNet(pl.LightningModule):
                 C - channels per image
                 W- image width
                 H - image height
-        Outputs:
-			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
-                B - batch size
-                C - channels per feature
-                W- feature width
-                H - feature height
-            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
-            labels - Real labels of the encoded features. Shape: [B * k, 1]
+			optimizer_idx - Int indicating the index of the current optimizer
+                0 - GAN generator optimizer
+                1 - GAN discriminator optimizer
+                2 - Full model optimizer
         """
         
         # divide the batch in images and labels
@@ -103,76 +100,69 @@ class ComplexLeNet(pl.LightningModule):
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
 
-        # send the encoded feature to the processing unit
+        # send the encoded feature to the processing module
         out = self.proccessing_module(out)
         
-        # decode the feature from
+        # decode the feature from the processing module
         result = self.decoder(out, thetas)
-
-        # log the train accuracy
-        out = self.softmax(result)
-        preds = out.argmax(dim=-1)
+		
+		# calculate the predictions
+        result = self.softmax(result)
+        preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('train_acc', acc)
         
-        # return the decoded feature, discriminator predictions and real labels
-        # return x, discriminator_predictions, labels
+        # calculate the model loss 
         model_loss = self.loss_fn(result, labels)
         loss = gan_loss + model_loss
 
-        # log the loss
-        self.log("generator/loss", gan_loss)
-        self.log("model/loss", model_loss)
-        self.log("total/loss", loss)
+        # log the training loss and accuracy
+        self.log("train_generator_loss", gan_loss)
+        self.log("train_model_loss", model_loss)
+        self.log("train_total-loss", loss)
+		self.log("train_acc", acc)
+        
+    def validation_step(self, batch, optimizer_idx):
+        """
+        Validation step of the complex LeNet model.
+        
+        Inputs:
+            image_batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+            optimizer_idx - Int indicating the index of the current optimizer
+                0 - GAN generator optimizer
+                1 - GAN discriminator optimizer
+                2 - Full model optimizer
+        """
+        
+        # divide the batch in images and labels
+        x, labels = batch
 
-        return loss
+        # run the image batch through the encoder (generator and discriminator)
+        gan_loss, out, thetas = self.encoder(x, False)
         
-    # def validation_step(self, batch, batch_idx):
-    #     """
-    #     Validation step of the complex LeNet model.
+        # send the encoded feature to the processing module
+        out = self.proccessing_module(out)
         
-    #     Inputs:
-    #         image_batch - Input batch of images. Shape: [B, C, W, H]
-    #             B - batch size
-    #             C - channels per image
-    #             W- image width
-    #             H - image height
-    #         training - Boolean value. Default = True
-    #             True when training
-    #             False when using in application
-    #     Outputs:
-	# 		decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
-    #             B - batch size
-    #             C - channels per feature
-    #             W- feature width
-    #             H - feature height
-    #         discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
-    #         labels - Real labels of the encoded features. Shape: [B * k, 1]
-    #     """
+        # decode the feature from the processing module
+        result = self.decoder(out, thetas)
         
-    #     # divide the batch in images and labels
-    #     x, labels = batch
+        # calculate the predictions
+        result = self.softmax(result)
+        preds = result.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
 
-    #     # run the image batch through the encoder (generator and discriminator)
-    #     gan_loss, out, thetas = self.encoder(x, False)
+		# calculate the loss
+        model_loss = self.loss_fn(result, labels)
+        loss = gan_loss + model_loss
         
-    #     # send the encoded feature to the processing unit
-    #     out = self.proccessing_module(out)
-        
-    #     # decode the feature from the processing unit
-    #     result = self.decoder(out, thetas)
-        
-    #     # calculate the predictions
-    #     result = self.softmax(result)
-    #     preds = result.argmax(dim=-1)
-    #     acc = (labels == preds).float().mean()
-
-    #     model_loss = self.loss_fn(result, labels)
-    #     loss = gan_loss + model_loss
-        
-    #     # log the validation accuracy
-    #     self.log('val_loss', loss)
-    #     self.log('val_acc', acc)
+        # log the validation loss and accuracy
+        self.log("val_generator_loss", gan_loss)
+        self.log("val_model_loss", model_loss)
+        self.log("val_total-loss", loss)
+		self.log("val_acc", acc)
 
     def test_step(self, batch, batch_idx):
         """
@@ -184,17 +174,10 @@ class ComplexLeNet(pl.LightningModule):
                 C - channels per image
                 W- image width
                 H - image height
-            training - Boolean value. Default = True
-                True when training
-                False when using in application
-        Outputs:
-			decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
-                B - batch size
-                C - channels per feature
-                W- feature width
-                H - feature height
-            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
-            labels - Real labels of the encoded features. Shape: [B * k, 1]
+            optimizer_idx - Int indicating the index of the current optimizer
+                0 - GAN generator optimizer
+                1 - GAN discriminator optimizer
+                2 - Full model optimize
         """
         
         # divide the batch in images and labels
@@ -214,27 +197,33 @@ class ComplexLeNet(pl.LightningModule):
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         
-        # log the test accuracy
-        self.log('test_acc', acc)
+        # calculate the loss
+        model_loss = self.loss_fn(result, labels)
+        loss = gan_loss + model_loss
+        
+        # log the test loss and accuracy
+        self.log("test_generator_loss", gan_loss)
+        self.log("test_model_loss", model_loss)
+        self.log("test_total-loss", loss)
+		self.log("test_acc", acc)
 
 class LenetProcessingModule(nn.Module):
     """
 	LeNet processing module model
 	"""
     
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=10):
         """
         Processing module of the network
 
         Inputs:
-            device - PyTorch device used to run the model on.
+            num_classes - Number of classes of images. Default = 10
         """
         super(LenetProcessingModule, self).__init__()
         
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        # self.pool = nn.LPPool2d(2, 2)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
@@ -243,6 +232,8 @@ class LenetProcessingModule(nn.Module):
     
     def forward(self, encoded_batch):
         """
+		Forward pass of the processing module.
+		
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -256,21 +247,18 @@ class LenetProcessingModule(nn.Module):
                 W- feature width
                 H - feature height
         """
-        
-        # transform the encoded features using the model layers
-        # TODO: make this work
 
+		# split the complex feature into its real and imaginary parts
         encoded_batch_real = encoded_batch.real
         encoded_batch_imag = encoded_batch.imag
 
+		# pass the encoded feature through the layers
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.device, self.pool), complex_max_pool(intermediate_imag, self.device, self.pool)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.device, self.pool), complex_max_pool(intermediate_imag, self.device, self.pool)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
 
@@ -282,8 +270,10 @@ class LenetProcessingModule(nn.Module):
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
 
+		# recombine the real and imaginary parts into a complex feature
         x = torch.complex(intermediate_real, intermediate_imag)
 
+		# return the processed complex features
         return x
     
     @property
@@ -301,18 +291,23 @@ class LenetDecoder(nn.Module):
     def __init__(self, num_classes):
         """
         Decoder module of the network
+		
+		Inputs:
+            num_classes - Number of classes of images. Default = 10
         """
         super(LenetDecoder, self).__init__()
 
+		# save the inputs
+		self.num_classes = num_classes
+		
         # initialize the softmax layer
-        self.num_classes = num_classes
-        #self.linear = nn.Linear(16*12*12, num_classes)
-
         self.softmax = nn.Softmax(dim=1)
 
 
     def forward(self, encoded_batch, thetas):
         """
+		Forward pass of the decoder.
+		
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -329,15 +324,10 @@ class LenetDecoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
-
         
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
-        
-        # apply the softmax layer#
-        # decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
         return decoded_batch

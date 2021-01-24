@@ -18,6 +18,12 @@
 Main training file
 """
 
+# basic imports
+import time
+from os import listdir
+from os.path import isfile, join
+
+# pytorch imports
 import argparse
 import os
 import torch
@@ -26,10 +32,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
-
-import time
-from os import listdir
-from os.path import isfile, join
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 # import models
 from models.lenet.lenet import *
@@ -43,17 +46,11 @@ from models.resnet110.complex_resnet110 import *
 from models.vgg16.vgg16 import *
 #from models.vgg16.vgg16_complex import *
 
-
-
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
 from dataloaders.celeba_loader import load_data as load_celeba_data
 from dataloaders.cub2011_loader import *
-
-
-# early stopping
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 # initialize our model dictionary
 model_dict = {}
