@@ -40,12 +40,17 @@ from models.resnet56.resnet56 import *
 from models.resnet56.complex_resnet56 import *
 from models.resnet110.resnet110 import *
 from models.resnet110.complex_resnet110 import *
+from models.vgg16.vgg16 import *
+#from models.vgg16.vgg16_complex import *
+
 
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
 from dataloaders.celeba_loader import load_data as load_celeba_data
+from dataloaders.cub2011_loader import *
+
 
 # early stopping
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -60,6 +65,8 @@ model_dict['ResNet-110'] = ResNet110
 model_dict['ResNet-56'] = ResNet56
 model_dict['Complex_ResNet-56'] = ComplexResNet56
 model_dict['Complex_ResNet-110'] = ComplexResNet110
+model_dict['VGG16'] = VGG16
+#model_dict['Complex_VGG-16'] = Complex_VGG16
 
 ### Note that Complex ResNet are the alpha variants
 
@@ -217,6 +224,15 @@ def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     if dataset in dataset_dict:
         return dataset_dict[dataset](batch_size, num_workers)
     # alert the user if the given dataset does not exist
+    if dataset == 'CUB-200':
+        train_dataset = Cub2011(train=True, download=False)
+        train_data = train_dataset.data
+        print(train_data.shape)
+        print(train_data.get_item)
+        test_dataset= Cub2011(train=False)
+        test_data = test_dataset.data
+        print(test_data.shape)
+        sys.exit()
     else:
         assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
 
@@ -247,10 +263,10 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
-                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110'])
+                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110', 'VGG16', 'Complex_VGG-16'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
-                        choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
+                        choices=['CIFAR-10', 'CIFAR-100', 'CelebA', 'CUB-200'])
     
     # dataloader hyperparameters
     parser.add_argument('--batch_size', default=256, type=int,
