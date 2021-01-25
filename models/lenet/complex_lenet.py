@@ -120,6 +120,8 @@ class ComplexLeNet(pl.LightningModule):
         self.log("train_model_loss", model_loss)
         self.log("train_total-loss", loss)
         self.log("train_acc", acc)
+
+        return loss
         
     def validation_step(self, batch, optimizer_idx):
         """
@@ -163,6 +165,8 @@ class ComplexLeNet(pl.LightningModule):
         self.log("val_model_loss", model_loss)
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
+
+        return loss
 
     def test_step(self, batch, optimizer_idx):
         """

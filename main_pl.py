@@ -50,7 +50,7 @@ from models.vgg16.vgg16 import *
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
 from dataloaders.celeba_loader import load_data as load_celeba_data
-from dataloaders.cub2011_loader import *
+from dataloaders.cub2011_loader import load_data as load_cub200_data
 
 # initialize our model dictionary
 model_dict = {}
@@ -72,6 +72,7 @@ dataset_dict = {}
 dataset_dict['CIFAR-10'] = load_cifar10_data
 dataset_dict['CIFAR-100'] = load_cifar100_data
 dataset_dict['CelebA'] = load_celeba_data
+dataset_dict['CUB-200'] = load_cub200_data
 
 # initialize our early stopping dictionary
 stop_criteria_dict = {}
@@ -132,12 +133,12 @@ def train_model(args):
 
         # initialize the Lightning trainer
         trainer = pl.Trainer(default_root_dir=args.log_dir,
-                         checkpoint_callback=ModelCheckpoint(
-                             save_weights_only=True),
-                         gpus=1 if torch.cuda.is_available() else 0,
-                         max_epochs=args.epochs,
-                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
-                         callbacks=[early_stop_callback])
+                        checkpoint_callback=ModelCheckpoint(
+                            save_weights_only=True),
+                        gpus=1 if torch.cuda.is_available() else 0,
+                        max_epochs=args.epochs,
+                        progress_bar_refresh_rate=1 if args.progress_bar else 0,
+                        callbacks=[early_stop_callback])
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -220,16 +221,7 @@ def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     # load the dataset if possible
     if dataset in dataset_dict:
         return dataset_dict[dataset](batch_size, num_workers)
-    # alert the user if the given dataset does not exist
-    if dataset == 'CUB-200':
-        train_dataset = Cub2011(train=True, download=False)
-        train_data = train_dataset.data
-        print(train_data.shape)
-        print(train_data.get_item)
-        test_dataset= Cub2011(train=False)
-        test_data = test_dataset.data
-        print(test_data.shape)
-        sys.exit()
+    # alert the user if the given dataset does not exist   
     else:
         assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
 
