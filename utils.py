@@ -47,7 +47,7 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
     # return the convolved real and imaginary parts
     return real_out, imag_out
 
-def complex_relu(x, device, c=None):
+def complex_relu(x, device, x_complex=None, c=None):
     """
     Function to apply ReLu on complex features.
 
@@ -63,8 +63,11 @@ def complex_relu(x, device, c=None):
         result - Resulting features after ReLU. [B, C, W, H]
     """
 
+    # TODO is this correct..?
+    norm_x = x_complex if x_complex is not None else x
+    
     # calculate the denominator
-    norm = complex_norm(x)
+    norm = complex_norm(norm_x)
 
     # check whether to give the given value of c
     if c is not None:
@@ -134,7 +137,7 @@ def complex_max_pool(x, pool):
     # return the values with the highest norm
     return output
 
-def complex_batchnorm(complex_tensor):
+def complex_batchnorm(x, x_complex=None):
     """
     Function to apply batch normalization on complex features.
 
@@ -150,19 +153,15 @@ def complex_batchnorm(complex_tensor):
 
     ###BATCH size x Dim x Dim x Dim
 
-
-    denominator = complex_tensor.view(complex_tensor.shape[0],-1)
-    #   print(denominator.shape)
+    norm_x = x_complex if x_complex is not None else x
+    
+    denominator = norm_x.view(norm_x.shape[0],-1)
     denominator = complex_norm(denominator)**2
-    #  print(denominator.shape)
     denominator = denominator.mean(dim=1)
+    denominator = torch.sqrt(denominator)
     denominator = denominator.view(denominator.shape[0],1,1,1)
-    #  print(denominator.shape)
 
-
-    # print(denominator.shape)
-
-    result = complex_tensor/denominator
+    result = x/denominator
 
 
     #print(result.shape)

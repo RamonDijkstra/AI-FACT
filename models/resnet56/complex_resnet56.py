@@ -151,6 +151,8 @@ class ComplexResNet56(pl.LightningModule):
         self.log("train_total-loss", loss)
         self.log("train_acc", acc)
 
+        return loss
+
     def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the complex LeNet model.
@@ -193,6 +195,8 @@ class ComplexResNet56(pl.LightningModule):
         self.log("val_model_loss", model_loss)
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
+        
+        return loss
 
     def test_step(self, batch, batch_idx):
         """
@@ -458,7 +462,11 @@ class ResNetBlock(nn.Module):
             intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv1_real, self.conv1_imag)
             intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device, c=1), complex_relu(intermediate_imag, self.device, c=1)
+            intermediate_real, intermediate_imag = complex_relu(
+                intermediate_real, self.device, torch.complex(intermediate_real, intermediate_imag), c=1
+            ), complex_relu(
+                intermediate_imag, self.device, torch.complex(intermediate_real, intermediate_imag), c=1
+            )
 
             intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
             intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
@@ -471,7 +479,11 @@ class ResNetBlock(nn.Module):
             intermediate_real = intermediate_real + encoded_batch_real
             intermediate_imag = intermediate_imag + encoded_batch_imag
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device, c=1), complex_relu(intermediate_imag, self.device, c=1)
+            intermediate_real, intermediate_imag = complex_relu(
+                intermediate_real, self.device, torch.complex(intermediate_real, intermediate_imag), c=1
+            ), complex_relu(
+                intermediate_imag, self.device, torch.complex(intermediate_real, intermediate_imag), c=1
+            )
 
             # recombine the real and imaginary parts into a complex feature
             out = torch.complex(intermediate_real, intermediate_imag)

@@ -205,7 +205,7 @@ def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
         return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
     else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
         
 def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     """
@@ -246,7 +246,7 @@ def initialize_early_stop(model='Complex_LeNet'):
         return stop_criteria_dict[model]
     # alert the user if the given model does not exist
     else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
 
 def format_seconds_to_hhmmss(seconds):
     try:
