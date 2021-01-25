@@ -8,6 +8,8 @@ from torchvision.datasets.utils import download_url
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
+import tarfile
+from os import path
 
 def load_data(batch_size=128, num_workers=2):
     transform = transforms.Compose(
@@ -15,6 +17,10 @@ def load_data(batch_size=128, num_workers=2):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         transforms.Resize(size=(32,32))]
     )
+
+    if not path.exists('./data/CUB_200_2011/CUB_200_2011/images'):
+        with tarfile.open(os.path.join('./data/CUB_200_2011', 'CUB_200_2011.tgz'), "r:gz") as tar:
+            tar.extractall(path='./data/CUB_200_2011')
 
     # Train data
     data_set = ImageFolder('./data/CUB_200_2011/CUB_200_2011/images', transform=transform)
