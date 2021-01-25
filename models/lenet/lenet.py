@@ -78,7 +78,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - Float representing the model loss.
+			loss - Tensor representing the model loss.
         """
         
         # divide the batch in images and labels
@@ -113,7 +113,7 @@ class LeNet(pl.LightningModule):
         # return the loss
         return loss
         
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the standard LeNet model.
         
@@ -124,7 +124,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - Float representing the model loss.
+			loss - Tensor representing the model loss.
         """
         
         # divide the batch in images and labels
@@ -159,7 +159,7 @@ class LeNet(pl.LightningModule):
         # return the loss
         return loss
         
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, optimizer_idx):
         """
         Test step of the standard LeNet model.
         
@@ -170,7 +170,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - Float representing the model loss.
+			loss - Tensor representing the model loss.
         """
         
         # divide the batch in images and labels

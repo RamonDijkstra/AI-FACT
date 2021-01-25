@@ -78,61 +78,102 @@ class ResNet56(pl.LightningModule):
 
     def training_step(self, batch, optimizer_idx):
         """
+        Training step of the standard ResNet-56 model.
+        
         Inputs:
-            image_batch - Input batch of images. Shape: [B, C, W, H]
+            batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per image
                 W- image width
                 H - image height
-            training - Boolean value. Default = True
-                True when training
-                False when using in application
         Outputs:
-            decoded_feature - Output batch of decoded real features. Shape: [B, C, W, H]
-                B - batch size
-                C - channels per feature
-                W- feature width
-                H - feature height
-            discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
-            labels - Real labels of the encoded features. Shape: [B * k, 1]
+			loss - Tensor representing the model loss.
         """
+        
+        # divide the batch in images and labels
         x, labels = batch
 
-        # send the pictures throuygh the model
+        # run the image batch through the network
         result = self.model_layers(x)
         
-        # Log the train accuracy
+        # log the training accuracy
         preds = self.softmax(result)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('train_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
+        self.log('train_acc', acc)
         
-        # return the decoded feature, discriminator predictions and real labels
-        # return x, discriminator_predictions, labels
-        model_loss = self.loss_fn(result, labels)
+        # log the training loss
+        loss = self.loss_fn(result, labels)
+        self.log("train_loss", loss)
+
+        # return the loss
+        return loss
         
-        loss = model_loss
+    def validation_step(self, batch, optimizer_idx):
+        """
+        Validation step of the standard ResNet-56 model.
+        
+        Inputs:
+            batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+        Outputs:
+			loss - Tensor representing the model loss.
+        """
+        
+        # divide the batch in images and labels
+        x, labels = batch
+        
+        # run the image batch through the network
+        result = self.model_layers(x)
 
-        # log the loss
-        self.log("total/loss", loss)
+        # log the validation accuracy
+        preds = self.softmax(result)
+        preds = preds.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
+        self.log('val_acc', acc)
+        
+        # log the validation loss
+        loss = self.loss_fn(result, labels)
+        self.log("val_loss", loss)
 
+        # return the loss
         return loss
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, optimizer_idx):
+        """
+        Test step of the standard ResNet-56 model.
+        
+        Inputs:
+            batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+        Outputs:
+			loss - Tensor representing the model loss.
+        """
+        
+        # divide the batch in images and labels
         x, labels = batch
 
-        # run the image batch through the encoder (generator and discriminator)
-
-        # send the encoded feature to the processing unit
+        # run the image batch through the network
         result = self.model_layers(x)
         
-        # decode the feature from
+        # log the test accuracy
         preds = self.softmax(result)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
+        self.log('test_acc', acc)
+        
+        # log the test loss
+        loss = self.loss_fn(result, labels)
+        self.log("test_loss", loss)
 
-        self.log('test_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
-
+        # return the loss
+        return loss
 
 class ResNetBlock(nn.Module):
 
