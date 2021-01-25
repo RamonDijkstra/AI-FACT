@@ -119,7 +119,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("train_generator_loss", gan_loss)
         self.log("train_model_loss", model_loss)
         self.log("train_total-loss", loss)
-		self.log("train_acc", acc)
+        self.log("train_acc", acc)
         
     def validation_step(self, batch, optimizer_idx):
         """
@@ -162,7 +162,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("val_generator_loss", gan_loss)
         self.log("val_model_loss", model_loss)
         self.log("val_total-loss", loss)
-		self.log("val_acc", acc)
+        self.log("val_acc", acc)
 
     def test_step(self, batch, batch_idx):
         """
@@ -205,7 +205,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("test_generator_loss", gan_loss)
         self.log("test_model_loss", model_loss)
         self.log("test_total-loss", loss)
-		self.log("test_acc", acc)
+        self.log("test_acc", acc)
 
 class LenetProcessingModule(nn.Module):
     """
@@ -297,9 +297,9 @@ class LenetDecoder(nn.Module):
         """
         super(LenetDecoder, self).__init__()
 
-		# save the inputs
-		self.num_classes = num_classes
-		
+        # save the inputs
+        self.num_classes = num_classes
+
         # initialize the softmax layer
         self.softmax = nn.Softmax(dim=1)
 

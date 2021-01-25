@@ -65,11 +65,11 @@ class ComplexResNet56(pl.LightningModule):
 
         # save the inputs
         self.num_classes = num_classes
-		self.k = k
+        self.k = k
         self.lr = lr
-		self.num_blocks = num_blocks
+        self.num_blocks = num_blocks
 
-		# TODO: variabel maken voor ResNet-56 en ResNet-110 zeker?
+        # TODO: variabel maken voor ResNet-56 en ResNet-110 zeker?
         # variable to make sure the linear layer in the discriminator in the GAN has the right shape
         discriminator_linear_shape = 16*16*16
 
@@ -92,8 +92,8 @@ class ComplexResNet56(pl.LightningModule):
         self.encoder = EncoderGAN(self.input_net, discriminator_linear_shape, self.k, self.lr)
         self.proccessing_module = Resnet_Processing_module(num_blocks[1])
         self.decoder = Resnet_Decoder(num_blocks[2], self.num_classes)
-		
-		# initialize the softmax for the accuracy
+        
+        # initialize the softmax for the accuracy
         self.softmax = nn.Softmax()
         
         # initialize the loss function of the complex network
@@ -124,13 +124,13 @@ class ComplexResNet56(pl.LightningModule):
                 2 - Full model optimizer
         """
         
-		# divide the batch in images and labels
+        # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
-		
-		# send the encoded feature to the processing module
+        
+        # send the encoded feature to the processing module
         out = self.proccessing_module(out)
         
         # decode the feature from the processing module
@@ -140,8 +140,8 @@ class ComplexResNet56(pl.LightningModule):
         result = self.softmax(result)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-		
-		# calculate the model loss 
+        
+        # calculate the model loss 
         model_loss = self.loss_fn(result, labels)
         loss = gan_loss + model_loss
 
@@ -149,9 +149,9 @@ class ComplexResNet56(pl.LightningModule):
         self.log("train_generator_loss", gan_loss)
         self.log("train_model_loss", model_loss)
         self.log("train_total-loss", loss)
-		self.log("train_acc", acc)
-	
-	def validation_step(self, batch, optimizer_idx):
+        self.log("train_acc", acc)
+
+    def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the complex LeNet model.
         
@@ -184,7 +184,7 @@ class ComplexResNet56(pl.LightningModule):
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
-		# calculate the loss
+        # calculate the loss
         model_loss = self.loss_fn(result, labels)
         loss = gan_loss + model_loss
         
@@ -192,7 +192,7 @@ class ComplexResNet56(pl.LightningModule):
         self.log("val_generator_loss", gan_loss)
         self.log("val_model_loss", model_loss)
         self.log("val_total-loss", loss)
-		self.log("val_acc", acc)
+        self.log("val_acc", acc)
 
     def test_step(self, batch, batch_idx):
         """
@@ -235,15 +235,15 @@ class ComplexResNet56(pl.LightningModule):
         self.log("test_generator_loss", gan_loss)
         self.log("test_model_loss", model_loss)
         self.log("test_total-loss", loss)
-		self.log("test_acc", acc)
+        self.log("test_acc", acc)
 
 class Resnet_Processing_module(nn.Module):
-	"""
-	ResNet processing module model
-	"""
-	
+    """
+    ResNet processing module model
+    """
+
     def __init__(self,  num_blocks=18):
-		"""
+        """
         Processing module of the network
 
         Inputs:
@@ -252,7 +252,7 @@ class Resnet_Processing_module(nn.Module):
         super().__init__()
         self.num_blocks = num_blocks
 
-		# initialize the ResNet blocks
+        # initialize the ResNet blocks
         blocks = []
         for i in range(self.num_blocks):
             subsample = (i == 0)
@@ -266,9 +266,9 @@ class Resnet_Processing_module(nn.Module):
         self.blocks = nn.Sequential(*blocks)
 
     def forward(self, encoded_batch):
-		"""
-		Forward pass of the processing module.
-		
+        """
+        Forward pass of the processing module.
+
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -276,17 +276,17 @@ class Resnet_Processing_module(nn.Module):
                 W- feature width
                 H - feature height
         Outputs:
-			processed_batch - Output batch of further processed features. Shape: [B, C, W, H]
+            processed_batch - Output batch of further processed features. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per feature
                 W- feature width
                 H - feature height
         """
-		
-		# pass the features through the Resnet blocks
+
+        # pass the features through the Resnet blocks
         out = self.blocks(encoded_batch)
-		
-		# return the output
+
+        # return the output
         return out
 
     @property
@@ -297,25 +297,25 @@ class Resnet_Processing_module(nn.Module):
         return next(self.parameters()).device
 
 class Resnet_Decoder(nn.Module):
-	"""
-	ResNet decoder model
-	"""
-	
+    """
+    ResNet decoder model
+    """
+
     def __init__(self, num_blocks=18, num_classes=10):
-		"""
+        """
         Decoder module of the network
-		
-		Inputs:
-			num_blocks - Number of ResNet blocks for this module. Default = 18
+        
+        Inputs:
+            num_blocks - Number of ResNet blocks for this module. Default = 18
             num_classes - Number of classes of images. Default = 10
         """
         super().__init__()
-		
-		# save the inputs
+        
+        # save the inputs
         self.num_blocks = num_blocks
         self.num_classes = num_classes
 
-		# initialize the ResNet blocks
+        # initialize the ResNet blocks
         blocks = []
         for i in range(self.num_blocks):
             subsample = (i == 0)
@@ -329,7 +329,7 @@ class Resnet_Decoder(nn.Module):
         
         self.blocks = nn.Sequential(*blocks)
         
-		# initialize the output layers 
+        # initialize the output layers 
         self.output_net = nn.Sequential(
                 nn.AdaptiveAvgPool2d((1,1)),
                 nn.Flatten(),
@@ -337,9 +337,9 @@ class Resnet_Decoder(nn.Module):
             )
 
     def forward(self,encoded_batch, thetas):
-		"""
-		Forward pass of the decoder.
-		
+        """
+        Forward pass of the decoder.
+        
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -348,59 +348,59 @@ class Resnet_Decoder(nn.Module):
                 H - feature height
             thetas - Angles used for rotating the real feature. Shape: [B, 1, 1, 1]
         Outputs:
-			decoded_batch - Output batch of decoded features. Shape: [B, C, W, H]
+            decoded_batch - Output batch of decoded features. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per feature
                 W- feature width
                 H - feature height
         """
-		
+
         # rotate the features back to their original state
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
-		# get rid of the imaginary part of the complex features
+        # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
 
         # apply the final ResNet blocks and output layers
         decoded_batch = self.blocks(decoded_batch)
         out = self.output_net(decoded_batch)
         
-		# return the output
+        # return the output
         return out
 
 class ResNetBlock(nn.Module):
-	"""
-	ResNet block model
-	"""
-	
+    """
+    ResNet block model
+    """
+
     def __init__(self, c_in, act_fn=nn.ReLU(), subsample=False, c_out=-1, complex=False):
         """
-		Block module of the ResNet.
-		
+        Block module of the ResNet.
+        
         Inputs:
             c_in - Number of input features
             act_fn - Activation class constructor. Default = nn.ReLU
             subsample - If True, we want to apply a stride inside the block and reduce 
-				the output shape by 2 in height and width. Default = False
+                the output shape by 2 in height and width. Default = False
             c_out - Number of output features. Note that this is only relevant if subsample 
-				is True, as otherwise, c_out = c_in. Default = -1
-			complex - Whether or not the block allows for complex values. Default is False
+                is True, as otherwise, c_out = c_in. Default = -1
+            complex - Whether or not the block allows for complex values. Default is False
         """
         super().__init__()
-		
-		# save the inputs
-		self.c_in = c_in
-		self.act_fn = act_fn
-		self.subsample = subsample
-		self.c_out = c_out
+        
+        # save the inputs
+        self.c_in = c_in
+        self.act_fn = act_fn
+        self.subsample = subsample
+        self.c_out = c_out
         self.complex = complex
 
-		# check whether to subsample
+        # check whether to subsample
         if not subsample:
             c_out = c_in
 
-		# TODO: checken of wat uitgecomment is weg kan, en text comments checken in stuk hieronder
-		# check whether to use the complex version
+        # TODO: checken of wat uitgecomment is weg kan, en text comments checken in stuk hieronder
+        # check whether to use the complex version
         if self.complex:
             self.conv1_real =   nn.Conv2d(c_in, c_out, kernel_size=3, padding=1, stride=1 if not subsample else 2, bias=False)
             self.conv1_imag =   nn.Conv2d(c_in, c_out, kernel_size=3, padding=1, stride=1 if not subsample else 2, bias=False)
@@ -430,9 +430,9 @@ class ResNetBlock(nn.Module):
             self.act_fn = act_fn
         
     def forward(self, x):
-		"""
-		Forward pass of the ResNet block.
-		
+        """
+        Forward pass of the ResNet block.
+        
         Inputs:
             x - Input batch of features. Shape: [B, C, W, H]
                 B - batch size
@@ -441,20 +441,20 @@ class ResNetBlock(nn.Module):
                 H - feature height
             thetas - Angles used for rotating the real feature. Shape: [B, 1, 1, 1]
         Outputs:
-			out - Output batch of features. Shape: [B, C, W, H]
+            out - Output batch of features. Shape: [B, C, W, H]
                 B - batch size
                 C - channels per feature
                 W- feature width
                 H - feature height
         """
-		
-		# check whether to use the complex version
+        
+        # check whether to use the complex version
         if self.complex:
-			# split the complex feature into its real and imaginary parts
+            # split the complex feature into its real and imaginary parts
             encoded_batch_real = x.real
             encoded_batch_imag = x.imag
-			
-			# pass the encoded feature through the layers
+            
+            # pass the encoded feature through the layers
             intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv1_real, self.conv1_imag)
             intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
 
@@ -462,36 +462,36 @@ class ResNetBlock(nn.Module):
 
             intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
             intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-			
-			# check whether downsampling
+            
+            # check whether downsampling
             if self.downsample_conv_real is not None:
                 encoded_batch_real, encoded_batch_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.downsample_conv_real, self.downsample_conv_imag)
-			
-			# add the intermediate processed feature to the original
+            
+            # add the intermediate processed feature to the original
             intermediate_real = intermediate_real + encoded_batch_real
             intermediate_imag = intermediate_imag + encoded_batch_imag
-			
+
             intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device, c=1), complex_relu(intermediate_imag, self.device, c=1)
 
-			# recombine the real and imaginary parts into a complex feature
+            # recombine the real and imaginary parts into a complex feature
             out = torch.complex(intermediate_real, intermediate_imag)
             
-			# return the processed complex features
+            # return the processed complex features
             return out
         else:  
-			# forward the real feature through the network
+            # forward the real feature through the network
             z = self.net(x)
-			
-			# check whether downsampling
+            
+            # check whether downsampling
             if self.downsample is not None:
                 x = self.downsample(x)
-				
-			# add the intermediate processed feature to the original
+                
+            # add the intermediate processed feature to the original
             out = z + x
-			
+            
             out = self.act_fn(out)
-			
-			# return the processed real features
+            
+            # return the processed real features
             return out
 
     @property

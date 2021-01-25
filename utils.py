@@ -66,13 +66,13 @@ def complex_relu(x, device, c=None):
     # calculate the denominator
     norm = complex_norm(x)
 
-	# check whether to give the given value of c
-	if c is not None:
-		# use the value of c for the constant
-		constant = torch.ones(x.shape, device=device) * c
-	else:
-		# use the expectation of the norm
-		constant = torch.mean(norm, dim=-1, keepdim=True)
+    # check whether to give the given value of c
+    if c is not None:
+        # use the value of c for the constant
+        constant = torch.ones(x.shape, device=device) * c
+    else:
+        # use the expectation of the norm
+        constant = torch.mean(norm, dim=-1, keepdim=True)
 
     # calculate the resulting features
     result = norm / torch.max(norm, constant)
@@ -135,7 +135,7 @@ def complex_max_pool(x, pool):
     return output
 
 def complex_batchnorm(complex_tensor):
-	"""
+    """
     Function to apply batch normalization on complex features.
 
     Inputs:
@@ -147,20 +147,20 @@ def complex_batchnorm(complex_tensor):
     Outputs:
         result - Resulting feature after batch normalization. [B, C, W, H]
     """
-	
+
     ###BATCH size x Dim x Dim x Dim
 
-    
+
     denominator = complex_tensor.view(complex_tensor.shape[0],-1)
- #   print(denominator.shape)
+    #   print(denominator.shape)
     denominator = complex_norm(denominator)**2
-  #  print(denominator.shape)
+    #  print(denominator.shape)
     denominator = denominator.mean(dim=1)
     denominator = denominator.view(denominator.shape[0],1,1,1)
-  #  print(denominator.shape)
+    #  print(denominator.shape)
 
 
-   # print(denominator.shape)
+    # print(denominator.shape)
 
     result = complex_tensor/denominator
 
