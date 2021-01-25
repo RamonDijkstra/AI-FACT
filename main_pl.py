@@ -249,6 +249,15 @@ def initialize_early_stop(model='Complex_LeNet'):
         assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
 
 def format_seconds_to_hhmmss(seconds):
+    """
+    Function for converting seconds to a string.
+    
+    Inputs:
+        seconds - Float indicating the number of seconds elapsed.
+    Outputs:
+        string - Formatted string of the elapsed time.
+    """
+    
     try:
         hours = seconds // (60*60)
         seconds %= (60*60)
