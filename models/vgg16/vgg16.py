@@ -26,13 +26,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 class VGG16(pl.LightningModule):
     """
-    Standard LeNet model
+    Standard VGG16 model
     """
     
     def __init__(self, num_classes=10, k=2, lr=3e-4):
     # def __init__(self, n_channels, n_classes):
         """
-        Standard LeNet network
+        Standard VGG16 network
 
         Inputs:
             num_classes - Number of classes of images. Default = 10
@@ -145,7 +145,7 @@ class VGG16(pl.LightningModule):
 
         #Linear layers from original papers
 
-        self.fc1 = nn.Linear(512, 4096)
+        self.fc1 = nn.Linear(2048, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -157,17 +157,6 @@ class VGG16(pl.LightningModule):
             preact5a_ReLU, preact5a_conv, preact5b_batch, preact5b_ReLU, preact5b_conv, preact5c_batch, preact5c_ReLU, preact5c_conv,
             maxpool5, last_batch_layer, last_ReLU_layer
         )
-
-        #Without batch norm
-        # self.layers = nn.Sequential(
-        #     conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
-        #     preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
-        #     preact3b_conv, preact3c_ReLU, preact3c_conv, conv3, maxpool3, preact4a_ReLU, preact4a_conv, 
-        #     preact4b_ReLU, preact4b_conv, preact4c_ReLU, preact4c_conv, maxpool4, 
-        #     preact5a_ReLU, preact5a_conv, preact5b_ReLU, preact5b_conv, preact5c_ReLU, preact5c_conv,
-        #     maxpool5, last_ReLU_layer
-        # )
-
         
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
@@ -206,7 +195,7 @@ class VGG16(pl.LightningModule):
             x = layer(x)
     
         #Reshape
-        x = x.reshape(x.shape[0], x.shape[1])
+        x = x.reshape(x.shape[0], -1)
 
         #Last value is output (after it went through all the layers)
         # out = self.linear_layer(x)
@@ -252,7 +241,7 @@ class VGG16(pl.LightningModule):
             x = layer(x)
     
         #Reshape
-        x = x.reshape(x.shape[0], x.shape[1])
+        x = x.reshape(x.shape[0], -1)
 
         #Last value is output (after it went through all the layers)
         # out = self.linear_layer(x)
@@ -298,7 +287,7 @@ class VGG16(pl.LightningModule):
             x = layer(x)
     
         #Reshape
-        x = x.reshape(x.shape[0], x.shape[1])
+        x = x.reshape(x.shape[0], -1)
 
         #Last value is output (after it went through all the layers)
         # out = self.linear_layer(x)

@@ -1,14 +1,59 @@
 import os
 import pandas as pd
+import torch
+from torchvision import transforms
+from torchvision.datasets import ImageFolder
 from torchvision.datasets.folder import default_loader
 from torchvision.datasets.utils import download_url
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 
+import tarfile
+from os import path
 
+def load_data(batch_size=128, num_workers=2):
+    transform = transforms.Compose(
+        [transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        transforms.Resize(size=(56,56))]
+    )
+
+    if not path.exists('./data/CUB_200_2011/CUB_200_2011/images'):
+        with tarfile.open(os.path.join('./data/CUB_200_2011', 'CUB_200_2011.tgz'), "r:gz") as tar:
+            tar.extractall(path='./data/CUB_200_2011')
+
+    # Train data
+    data_set = ImageFolder('./data/CUB_200_2011/CUB_200_2011/images', transform=transform)
+
+    train_split = int(0.7 * len(data_set))
+    val_test_split = len(data_set) - train_split
+    trainset, val_testset = torch.utils.data.random_split(
+        data_set, [train_split, val_test_split]
+    )
+
+    val_split = int(len(val_testset)/2)
+    test_split = len(val_testset) - val_split
+    valset, testset = torch.utils.data.random_split(
+        val_testset, [val_split, test_split]
+    )
+
+    trainloader = DataLoader(
+        trainset, batch_size=batch_size, num_workers=num_workers, shuffle=True
+    )
+    valloader = DataLoader(
+        valset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+    testloader = DataLoader(
+        testset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+
+    num_classes = 200
+
+    return num_classes, trainloader, valloader, testloader
 
 class Cub2011(Dataset):
     base_folder = 'CUB_200_2011/images'
-    url = 'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
+    url = './data/CUB_200_2011.tgz'
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
 
@@ -61,7 +106,7 @@ class Cub2011(Dataset):
             print('Files already downloaded and verified')
             return
 
-        download_url(self.url, self.root, self.filename, self.tgz_md5)
+        # download_url(self.url, self.root, self.filename, self.tgz_md5)
 
         with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:
             tar.extractall(path=self.root)
