@@ -235,6 +235,8 @@ class Resnet_Decoder(nn.Module):
         #Rerotate
         #print(encoded_batch.shape)
         #print(thetas.shape)
+        print(encoded_batch.shape)
+        print(thetas.shape)
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
 

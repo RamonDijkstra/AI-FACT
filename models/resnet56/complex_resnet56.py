@@ -356,7 +356,7 @@ class Resnet_Decoder(nn.Module):
                 W- feature width
                 H - feature height
         """
-
+        
         # rotate the features back to their original state
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 

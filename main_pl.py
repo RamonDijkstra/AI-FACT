@@ -44,7 +44,7 @@ from models.resnet56.complex_resnet56 import *
 from models.resnet110.resnet110 import *
 from models.resnet110.complex_resnet110 import *
 from models.vgg16.vgg16 import *
-#from models.vgg16.vgg16_complex import *
+from models.vgg16.vgg16_complex import *
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
@@ -63,7 +63,7 @@ model_dict['ResNet-56'] = ResNet56
 model_dict['Complex_ResNet-56'] = ComplexResNet56
 model_dict['Complex_ResNet-110'] = ComplexResNet110
 model_dict['VGG16'] = VGG16
-#model_dict['Complex_VGG-16'] = Complex_VGG16
+model_dict['Complex_VGG-16'] = Complex_VGG16
 
 ### Note that Complex ResNet are the alpha variants
 

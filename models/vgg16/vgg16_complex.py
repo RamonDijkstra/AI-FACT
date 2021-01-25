@@ -46,12 +46,13 @@ class Complex_VGG16(pl.LightningModule):
             num_classes - Number of classes of images. Default = 10
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(VGG16, self).__init__()
+        super(Complex_VGG16, self).__init__()
         self.save_hyperparameters()
         
         # save the inputs
         self.num_classes = num_classes
         self.lr = lr
+        self.k = k
 
         n_channels = 3
 
@@ -103,7 +104,7 @@ class Complex_VGG16(pl.LightningModule):
             preact3b_conv, 
         )
 
-        self.encoder = EncoderGAN(self.input_net, (3*224*224), self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
@@ -279,36 +280,39 @@ class VGG16ProcessingModule(nn.Module):
         self.num_classes = num_classes
 
         #Preactivation 3c)
-        preact3c_conv_real = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact3c_conv_imag = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact3c_conv_real = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact3c_conv_imag = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Convolution 3
-        conv3_real = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
-        conv3_imag = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
+        self.conv3_real = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
+        self.conv3_imag = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
+
+        #Maxpool
+        self.pool = nn.MaxPool2d(kernel_size = (3, 3), stride=2, padding=1, return_indices=True)
 
         #Preactivation 4a)
-        preact4a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact4a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Preactivation 4b)
-        preact4b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact4b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Preactivation 4c)
-        preact4c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact4c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact4c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Preactivation 5a)
-        preact5a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact5a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Preactivation 5b)
-        preact5b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact5b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
 
         #Preactivation 5c)
-        preact5c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-        preact5c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        self.preact5c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
     
     def forward(self, encoded_batch):
         """
@@ -339,9 +343,9 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Conv 3
@@ -351,9 +355,9 @@ class VGG16ProcessingModule(nn.Module):
 
         # Pool 3
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 4a
@@ -363,9 +367,9 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 4b
@@ -375,9 +379,9 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 4c
@@ -387,16 +391,16 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Pool 4
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 5a
@@ -406,9 +410,9 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact4c_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 5b
@@ -418,9 +422,9 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Preact 5c
@@ -430,16 +434,16 @@ class VGG16ProcessingModule(nn.Module):
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
         )
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Pool 5
         intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.device, self.pool
+            intermediate_real, self.pool
         ), complex_max_pool(
-            intermediate_imag, self.device, self.pool
+            intermediate_imag, self.pool
         )
 
         # Last batchnorm
@@ -461,7 +465,7 @@ class VGG16ProcessingModule(nn.Module):
         """
         Property function to get the device on which the generator is
         """
-        return next(self.parameters()).device
+        # return next(self.parameters()).device
 
 class VGG16Decoder(nn.Module):
     """
@@ -477,7 +481,7 @@ class VGG16Decoder(nn.Module):
         # initialize the softmax layer
         self.num_classes = num_classes
         
-        self.fc1 = nn.Linear(512, 4096)
+        self.fc1 = nn.Linear(16384, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -502,12 +506,12 @@ class VGG16Decoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
 
+        print(decoded_batch.shape)
         decoded_batch = self.fc1(decoded_batch)
         decoded_batch = self.fc2(decoded_batch)
         result = self.fc3(decoded_batch)

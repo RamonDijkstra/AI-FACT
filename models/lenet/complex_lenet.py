@@ -326,6 +326,11 @@ class LenetDecoder(nn.Module):
                 W- feature width
                 H - feature height
         """
+
+        print(encoded_batch.shape)
+        print(thetas.shape)
+
+        a = b
         
     	# rotate the features back to their original state
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
