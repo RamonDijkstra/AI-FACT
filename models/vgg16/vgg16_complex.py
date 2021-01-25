@@ -449,6 +449,7 @@ class VGG16ProcessingModule(nn.Module):
 
         # Last batchnorm
         intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(
             encoded_batch_real, self.device

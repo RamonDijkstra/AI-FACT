@@ -41,10 +41,10 @@ def load_data(batch_size=128, num_workers=2):
         trainset, batch_size=batch_size, num_workers=num_workers, shuffle=True
     )
     valloader = DataLoader(
-        valset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        valset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
     testloader = DataLoader(
-        testset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        testset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
 
     num_classes = 200

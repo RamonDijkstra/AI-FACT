@@ -292,9 +292,9 @@ class Discriminator(nn.Module):
 
         # cast the encoded batch to real values
         encoded_batch = encoded_batch.real
-        
+
         # reshape the batch
-        encoded_batch = encoded_batch.view(encoded_batch.shape[0], self.discrim_shape).to(self.device)
+        encoded_batch = encoded_batch.view(encoded_batch.shape[0], -1).to(self.device)
         
         # predict the labels
         predictions = self.linear(encoded_batch)
