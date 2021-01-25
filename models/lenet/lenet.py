@@ -78,7 +78,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - ?
+			loss - Float representing the model loss.
         """
         
         # divide the batch in images and labels
@@ -124,7 +124,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - ?
+			loss - Float representing the model loss.
         """
         
         # divide the batch in images and labels
@@ -170,7 +170,7 @@ class LeNet(pl.LightningModule):
                 W- image width
                 H - image height
         Outputs:
-			loss - ?
+			loss - Float representing the model loss.
         """
         
         # divide the batch in images and labels
