@@ -104,6 +104,7 @@ class Complex_VGG16(pl.LightningModule):
             preact3b_conv, 
         )
 
+        #number depended on dataset
         self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
@@ -337,8 +338,7 @@ class VGG16ProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         # Preact 3c
-        # intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
-        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
+        intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
@@ -362,7 +362,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4a
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
@@ -374,7 +374,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4b
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
@@ -386,7 +386,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4c
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
@@ -405,7 +405,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5a
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact4c_conv_imag
@@ -417,7 +417,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5b
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
@@ -429,7 +429,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5c
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
@@ -448,7 +448,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Last batchnorm
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(
             encoded_batch_real, self.device
