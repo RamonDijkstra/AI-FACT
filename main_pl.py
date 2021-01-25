@@ -182,8 +182,8 @@ def train_model(args):
     
     # print the elapsed time of experiment and testing
     end = time.time()
-    print('Testing run-time: ' + str(end - test_start))
-    print('Experiment run-time: ' + str(end - experiment_start))
+    print('Testing run-time: ' + format_seconds_to_hhmmss(end - test_start))
+    print('Experiment run-time: ' + format_seconds_to_hhmmss(end - experiment_start))
 
     # return the model
     return model
@@ -205,7 +205,7 @@ def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
         return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
     else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
         
 def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     """
@@ -246,7 +246,26 @@ def initialize_early_stop(model='Complex_LeNet'):
         return stop_criteria_dict[model]
     # alert the user if the given model does not exist
     else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
+
+def format_seconds_to_hhmmss(seconds):
+    """
+    Function for converting seconds to a string.
+    
+    Inputs:
+        seconds - Float indicating the number of seconds elapsed.
+    Outputs:
+        string - Formatted string of the elapsed time.
+    """
+    
+    try:
+        hours = seconds // (60*60)
+        seconds %= (60*60)
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02i:%02i:%02i" % (hours, minutes, seconds)
+    except:
+        return 'Invalid time'
 
 if __name__ == '__main__':
     """

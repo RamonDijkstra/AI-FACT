@@ -164,7 +164,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, optimizer_idx):
         """
         Test step of the complex LeNet model.
         
