@@ -104,7 +104,7 @@ class Complex_VGG16(pl.LightningModule):
             preact3b_conv, 
         )
 
-        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, (256*14*14), self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
@@ -448,7 +448,6 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Last batchnorm
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(
             encoded_batch_real, self.device
