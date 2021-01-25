@@ -182,8 +182,8 @@ def train_model(args):
     
     # print the elapsed time of experiment and testing
     end = time.time()
-    print('Testing run-time: ' + str(end - test_start))
-    print('Experiment run-time: ' + str(end - experiment_start))
+    print('Testing run-time: ' + format_seconds_to_hhmmss(end - test_start))
+    print('Experiment run-time: ' + format_seconds_to_hhmmss(end - experiment_start))
 
     # return the model
     return model
@@ -247,6 +247,16 @@ def initialize_early_stop(model='Complex_LeNet'):
     # alert the user if the given model does not exist
     else:
         assert False, "Unknown model name \"%s\". Available models are: %s" % (model_name, str(model_dict.keys()))
+
+def format_seconds_to_hhmmss(seconds):
+    try:
+        hours = seconds // (60*60)
+        seconds %= (60*60)
+        minutes = seconds // 60
+        seconds %= 60
+        return "%02i:%02i:%02i" % (hours, minutes, seconds)
+    except:
+        return 'Invalid time'
 
 if __name__ == '__main__':
     """
