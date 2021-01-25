@@ -15,7 +15,7 @@ def load_data(batch_size=128, num_workers=2):
     transform = transforms.Compose(
         [transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Resize(size=(32,32))]
+        transforms.Resize(size=(56,56))]
     )
 
     if not path.exists('./data/CUB_200_2011/CUB_200_2011/images'):

@@ -33,34 +33,79 @@ import numpy as np
 from utils import *
 from models.encoder.GAN import EncoderGAN
 
-class ComplexLeNet(pl.LightningModule):
+class Complex_VGG16(pl.LightningModule):
     """
-	Complex LeNet model
+	Complex VGG16 model
 	"""
 
     def __init__(self, num_classes=10, k=2, lr=3e-4):
         """
-        Complex LeNet network
+        Standard VGG16 network
 
         Inputs:
             num_classes - Number of classes of images. Default = 10
-            k - Level of anonimity. k-1 fake features are generated
-                to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(ComplexLeNet, self).__init__()       
+        super(VGG16, self).__init__()
         self.save_hyperparameters()
-
+        
         # save the inputs
         self.num_classes = num_classes
         self.lr = lr
-        self.k = k
 
-        # initialize the different modules of the network
-        encoder_conv = nn.Conv2d(3, 6, 5)
-        self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
-        self.proccessing_module = LenetProcessingModule(self.num_classes)
-        self.decoder = LenetDecoder(self.num_classes)
+        n_channels = 3
+
+        # initialize the model layers
+
+        #Convolution 0
+        conv0 = nn.Conv2d(n_channels, 64, kernel_size = (3, 3), stride=1, padding=1)
+
+        #Preactivation 1
+        preact1_batch = nn.BatchNorm2d(64)
+        preact1_ReLU = nn.ReLU()
+        preact1_conv = nn.Conv2d(64, 64, kernel_size = (3, 3), stride=1, padding=1)
+
+        #Convolution 1
+        conv1 = nn.Conv2d(64, 128, kernel_size = (1, 1), stride=1, padding=0)
+
+        #Maxpool1
+        maxpool1 = nn.MaxPool2d(kernel_size = (3, 3), stride=2, padding=1)
+
+        #Preactivation 2a)
+        preact2a_batch = nn.BatchNorm2d(128)
+        preact2a_ReLU = nn.ReLU()
+        preact2a_conv = nn.Conv2d(128, 128, kernel_size = (3, 3), stride=1, padding=1)
+
+        #Preactivation 2b)
+        preact2b_batch = nn.BatchNorm2d(128)
+        preact2b_ReLU = nn.ReLU()
+        preact2b_conv = nn.Conv2d(128, 128, kernel_size = (3, 3), stride=1, padding=1)
+
+        #Convolution 2
+        conv2 = nn.Conv2d(128, 256, kernel_size = (1, 1), stride=1, padding=0)
+
+        #Maxpool2
+        maxpool2 = nn.MaxPool2d(kernel_size = (3, 3), stride=2, padding=1)
+
+        #Preactivation 3a)
+        preact3a_batch = nn.BatchNorm2d(256)
+        preact3a_ReLU = nn.ReLU()
+        preact3a_conv = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1)
+
+        #Preactivation 3b)
+        preact3b_batch = nn.BatchNorm2d(256)
+        preact3b_ReLU = nn.ReLU()
+        preact3b_conv = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1)
+
+        self.input_net = nn.Sequential(
+            conv0, preact1_batch, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_batch, preact2a_ReLU, preact2a_conv, preact2b_batch,
+            preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_batch, preact3a_ReLU, preact3a_conv, preact3b_batch, preact3b_ReLU,
+            preact3b_conv, 
+        )
+
+        self.encoder = EncoderGAN(self.input_net, (3*224*224), self.k, self.lr)
+        self.proccessing_module = VGG16ProcessingModule(self.num_classes)
+        self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
         
         # initialize the loss function
@@ -217,9 +262,9 @@ class ComplexLeNet(pl.LightningModule):
         # log the test accuracy
         self.log('test_acc', acc)
 
-class LenetProcessingModule(nn.Module):
+class VGG16ProcessingModule(nn.Module):
     """
-	LeNet processing module model
+	VGG16 processing module model
 	"""
     
     def __init__(self, num_classes):
@@ -229,17 +274,41 @@ class LenetProcessingModule(nn.Module):
         Inputs:
             device - PyTorch device used to run the model on.
         """
-        super(LenetProcessingModule, self).__init__()
-        
-        # initialize the layers of the LeNet model
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2, return_indices=True)
-        # self.pool = nn.LPPool2d(2, 2)
-        self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
-        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, num_classes)
+        super(VGG16ProcessingModule, self).__init__()
+
+        self.num_classes = num_classes
+
+        #Preactivation 3c)
+        preact3c_conv_real = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact3c_conv_imag = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Convolution 3
+        conv3_real = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
+        conv3_imag = nn.Conv2d(256, 512, kernel_size = (1, 1), stride=1, padding=0, bias=False)
+
+        #Preactivation 4a)
+        preact4a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact4a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Preactivation 4b)
+        preact4b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact4b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Preactivation 4c)
+        preact4c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact4c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Preactivation 5a)
+        preact5a_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact5a_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Preactivation 5b)
+        preact5b_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact5b_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+
+        #Preactivation 5c)
+        preact5c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
+        preact5c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
     
     def forward(self, encoded_batch):
         """
@@ -263,24 +332,125 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_real = encoded_batch.real
         encoded_batch_imag = encoded_batch.imag
 
-        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.device, self.pool), complex_max_pool(intermediate_imag, self.device, self.pool)
-
-        intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        # intermediate_real, intermediate_imag = self.pool(intermediate_real), self.pool(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.device, self.pool), complex_max_pool(intermediate_imag, self.device, self.pool)
-
-        intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
-
-        intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)    
-
-        intermediate_real, intermediate_imag = self.fc2(intermediate_real), self.fc2(intermediate_imag)
+        # Preact 3c
+        intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
 
-        intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
+        # Conv 3
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.conv3_real, self.conv3_imag
+        )
+
+        # Pool 3
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 4a
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 4b
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 4c
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Pool 4
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 5a
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact4c_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 5b
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Preact 5c
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_conv(
+            intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
+        )
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Pool 5
+        intermediate_real, intermediate_imag = complex_max_pool(
+            intermediate_real, self.device, self.pool
+        ), complex_max_pool(
+            intermediate_imag, self.device, self.pool
+        )
+
+        # Last batchnorm
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # Last ReLU
+        intermediate_real, intermediate_imag = complex_relu(
+            encoded_batch_real, self.device
+        ), complex_relu(
+            encoded_batch_imag, 
+            self.device
+        )
 
         x = torch.complex(intermediate_real, intermediate_imag)
 
@@ -293,20 +463,23 @@ class LenetProcessingModule(nn.Module):
         """
         return next(self.parameters()).device
 
-class LenetDecoder(nn.Module):
+class VGG16Decoder(nn.Module):
     """
-	LeNet decoder model
+	VGG16 decoder model
 	"""
     
     def __init__(self, num_classes):
         """
         Decoder module of the network
         """
-        super(LenetDecoder, self).__init__()
+        super(VGG16Decoder, self).__init__()
 
         # initialize the softmax layer
         self.num_classes = num_classes
-        #self.linear = nn.Linear(16*12*12, num_classes)
+        
+        self.fc1 = nn.Linear(512, 4096)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.fc3 = nn.Linear(4096, self.num_classes)
 
         self.softmax = nn.Softmax(dim=1)
 
@@ -332,12 +505,15 @@ class LenetDecoder(nn.Module):
 
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
 
-        
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
+
+        decoded_batch = self.fc1(decoded_batch)
+        decoded_batch = self.fc2(decoded_batch)
+        result = self.fc3(decoded_batch)
         
         # apply the softmax layer#
         # decoded_batch = self.softmax(decoded_batch)
         
         # return the decoded batch
-        return decoded_batch
+        return result
