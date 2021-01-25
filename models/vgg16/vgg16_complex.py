@@ -337,7 +337,8 @@ class VGG16ProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         # Preact 3c
-        intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
+        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
@@ -361,7 +362,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4a
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
@@ -373,7 +374,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4b
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
@@ -385,7 +386,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 4c
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
@@ -404,7 +405,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5a
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact4c_conv_imag
@@ -416,7 +417,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5b
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
@@ -428,7 +429,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Preact 5c
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
@@ -447,7 +448,7 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Last batchnorm
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(
             encoded_batch_real, self.device
@@ -465,7 +466,7 @@ class VGG16ProcessingModule(nn.Module):
         """
         Property function to get the device on which the generator is
         """
-        # return next(self.parameters()).device
+        return next(self.parameters()).device
 
 class VGG16Decoder(nn.Module):
     """
@@ -481,7 +482,7 @@ class VGG16Decoder(nn.Module):
         # initialize the softmax layer
         self.num_classes = num_classes
         
-        self.fc1 = nn.Linear(16384, 4096)
+        # self.fc1 = nn.Linear(16384, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -511,7 +512,10 @@ class VGG16Decoder(nn.Module):
         # get rid of the imaginary part of the complex features
         decoded_batch = decoded_batch.real
 
-        print(decoded_batch.shape)
+        decoded_batch = decoded_batch.reshape(decoded_batch.shape[0], -1)
+
+        self.fc1 = nn.Linear(decoded_batch.shape[1], 4096).to(self.device)
+
         decoded_batch = self.fc1(decoded_batch)
         decoded_batch = self.fc2(decoded_batch)
         result = self.fc3(decoded_batch)
@@ -521,3 +525,10 @@ class VGG16Decoder(nn.Module):
         
         # return the decoded batch
         return result
+
+    @property
+    def device(self):
+        """
+        Property function to get the device on which the generator is
+        """
+        return next(self.parameters()).device
