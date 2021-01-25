@@ -74,17 +74,14 @@ dataset_dict['CIFAR-100'] = load_cifar100_data
 dataset_dict['CelebA'] = load_celeba_data
 dataset_dict['CUB-200'] = load_cub200_data
 
-# initialize our early stopping dictionary
-stop_criteria_dict = {}
-stop_criteria_dict['LeNet'] = EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.005,
-        patience=3,
+# initialize our early stopping criteria
+stop_criteria = EarlyStopping(
+        monitor='val_acc',
+        min_delta=0,
+        patience=10,
         verbose=False,
-        mode='min'
+        mode='max'
     )
-stop_criteria_dict['Complex_LeNet'] = stop_criteria_dict['LeNet']
-# TODO: alle stop criteria toevoegen
 
 def train_model(args):
     """
@@ -128,9 +125,6 @@ def train_model(args):
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
     else:
-        # initialize the stopping criteria
-        early_stop_callback = initialize_early_stop(args.model)
-
         # initialize the Lightning trainer
         trainer = pl.Trainer(default_root_dir=args.log_dir,
                         checkpoint_callback=ModelCheckpoint(
@@ -138,7 +132,7 @@ def train_model(args):
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
-                        callbacks=[early_stop_callback])
+                        callbacks=[stop_criteria])
     trainer.logger._default_hp_metric = None
 
     # seed for reproducability
@@ -224,21 +218,6 @@ def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
     # alert the user if the given dataset does not exist   
     else:
         assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
-
-def initialize_early_stop(model='Complex_LeNet'):
-    """
-    Function for initializing a early stopping criteria.
-    
-    Inputs:
-        model - String indicating the model to use. Default = 'Complex_LeNet'
-    """
-    
-    # initialize the criteria if possible
-    if model in stop_criteria_dict:
-        return stop_criteria_dict[model]
-    # alert the user if the given model does not exist
-    else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
 
 def format_seconds_to_hhmmss(seconds):
     """
