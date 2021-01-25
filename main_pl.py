@@ -222,11 +222,11 @@ def load_data(dataset='CIFAR-10', batch_size=256, num_workers=0):
         return dataset_dict[dataset](batch_size, num_workers)
     # alert the user if the given dataset does not exist
     if dataset == 'CUB-200':
-        train_dataset = Cub2011(train=True, download=False)
+        train_dataset = Cub2011(train=True, download=True)
         train_data = train_dataset.data
         print(train_data.shape)
         print(train_data.get_item)
-        test_dataset= Cub2011(train=False)
+        test_dataset = Cub2011(train=False)
         test_data = test_dataset.data
         print(test_data.shape)
         sys.exit()
