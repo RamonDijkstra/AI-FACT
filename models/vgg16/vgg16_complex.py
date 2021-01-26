@@ -101,7 +101,7 @@ class Complex_VGG16(pl.LightningModule):
         self.input_net = nn.Sequential(
             conv0, preact1_batch, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_batch, preact2a_ReLU, preact2a_conv, preact2b_batch,
             preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_batch, preact3a_ReLU, preact3a_conv, preact3b_batch, preact3b_ReLU,
-            preact3b_conv, 
+            preact3b_conv
         )
 
         #number depended on dataset
@@ -343,11 +343,6 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
         )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
 
         # Conv 3
         intermediate_real, intermediate_imag = complex_conv(
@@ -367,11 +362,6 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
         )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
 
         # Preact 4b
         intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
@@ -379,22 +369,12 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
         )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
 
         # Preact 4c
         intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
-        )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
         )
 
         # Pool 4
@@ -408,12 +388,7 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
-            intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact4c_conv_imag
-        )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
+            intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact5a_conv_imag
         )
 
         # Preact 5b
@@ -422,22 +397,12 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
         )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
 
         # Preact 5c
         intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
-        )
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
         )
 
         # Pool 5
@@ -452,9 +417,9 @@ class VGG16ProcessingModule(nn.Module):
         
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(
-            encoded_batch_real, self.device
+            intermediate_real, self.device
         ), complex_relu(
-            encoded_batch_imag, 
+            intermediate_imag, 
             self.device
         )
 

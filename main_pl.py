@@ -62,7 +62,7 @@ model_dict['ResNet-110'] = ResNet110
 model_dict['ResNet-56'] = ResNet56
 model_dict['Complex_ResNet-56'] = ComplexResNet56
 model_dict['Complex_ResNet-110'] = ComplexResNet110
-model_dict['VGG16'] = VGG16
+model_dict['VGG-16'] = VGG16
 model_dict['Complex_VGG-16'] = Complex_VGG16
 
 ### Note that Complex ResNet are the alpha variants
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
-                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110', 'VGG16', 'Complex_VGG-16'])
+                        choices=['LeNet', 'Complex_LeNet', 'AlexNet', 'Complex_AlexNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110', 'VGG-16', 'Complex_VGG-16'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA', 'CUB-200'])
