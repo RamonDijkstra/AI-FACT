@@ -41,9 +41,11 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
     """
     
     # calculate the convolution on the real and imaginary parts
-    real_out = conv_real(x_real) - conv_imag(x_imag)
-    imag_out = conv_real(x_imag) + conv_imag(x_real)
-    
+    # real_out = conv_real(x_real) - conv_imag(x_imag)
+    # imag_out = conv_real(x_imag) + conv_imag(x_real)
+    real_out = conv_real(x_real)
+    imag_out = conv_imag(x_imag)
+
     # return the convolved real and imaginary parts
     return real_out, imag_out
 

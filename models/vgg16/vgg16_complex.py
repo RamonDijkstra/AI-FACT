@@ -98,11 +98,17 @@ class Complex_VGG16(pl.LightningModule):
         preact3b_ReLU = nn.ReLU()
         preact3b_conv = nn.Conv2d(256, 256, kernel_size = (3, 3), stride=1, padding=1)
 
-        self.input_net = nn.Sequential(
-            conv0, preact1_batch, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_batch, preact2a_ReLU, preact2a_conv, preact2b_batch,
-            preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_batch, preact3a_ReLU, preact3a_conv, preact3b_batch, preact3b_ReLU,
-            preact3b_conv
-        )
+        # self.input_net = nn.Sequential(
+        #     conv0, preact1_batch, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_batch, preact2a_ReLU, preact2a_conv, preact2b_batch,
+        #     preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_batch, preact3a_ReLU, preact3a_conv, preact3b_batch, preact3b_ReLU,
+        #     preact3b_conv
+        # )
+
+        # self.input_net = nn.Sequential(
+        #     conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
+        #     preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
+        #     preact3b_conv
+        # )
 
         #number depended on dataset
         self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
