@@ -47,7 +47,46 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
     # return the convolved real and imaginary parts
     return real_out, imag_out
 
-def complex_relu(x, device, x_complex=None, c=None):
+# def complex_relu(x, device, x_complex=None, c=None):
+#     """
+#     Function to apply ReLu on complex features.
+
+#     Inputs:
+#         x - Batch of complex features. Shape: [B, C, W, H]
+#                 B - batch size
+#                 C - channels per feature
+#                 W- feature width
+#                 H - feature height
+#         device - PyTorch device used to run the model on.
+#         c - Fixed constant used in the max function. Default = None
+#     Outputs:
+#         result - Resulting features after ReLU. [B, C, W, H]
+#     """
+
+#     # TODO is this correct..?
+#     #norm_x = x_complex if x_complex is not None else x
+    
+#     # calculate the denominator
+#     norm = complex_norm(norm_x)
+
+#     # check whether to give the given value of c
+#     if c is not None:
+#         # use the value of c for the constant
+#         constant = torch.ones(x.shape, device=device) * c
+#     else:
+#         # use the expectation of the norm
+#         constant = torch.mean(norm, dim=-1, keepdim=True)
+
+#     # calculate the resulting features
+#     result = norm / torch.max(norm, constant)
+#     result = result * x
+    
+#     # return the resulting features
+#     return result
+
+    ##########CHAOS
+
+def complex_relu(x_real, x_imag, device, x_complex=None, c=None):
     """
     Function to apply ReLu on complex features.
 
@@ -64,28 +103,35 @@ def complex_relu(x, device, x_complex=None, c=None):
     """
 
     # TODO is this correct..?
-    norm_x = x_complex if x_complex is not None else x
+    #norm_x = x_complex if x_complex is not None else x
     
     # calculate the denominator
-    norm = complex_norm(norm_x)
+    #x = torch.complex(x_real,x_imag)
+    norm = complex_norm(x_real,x_imag)
 
     # check whether to give the given value of c
     if c is not None:
         # use the value of c for the constant
-        constant = torch.ones(x.shape, device=device) * c
+        constant = torch.ones(x_real.shape, device=device) * c
     else:
         # use the expectation of the norm
         constant = torch.mean(norm, dim=-1, keepdim=True)
 
     # calculate the resulting features
     result = norm / torch.max(norm, constant)
-    result = result * x
+    result_real = result * x_real 
+    result_imag = result * x_imag
+
     
     # return the resulting features
-    return result
+    return result_real, result_imag
 
 
-def complex_norm(x):
+    ############ /CHAOS
+
+
+
+def complex_norm(x_real, x_imag):
     """
     Function calculate norm of complex and real features.
 
@@ -99,17 +145,21 @@ def complex_norm(x):
         norm - Norm of complex features. Shape: [B, C, W, H]
     """
 
-    try:
-		# calculate the norm of complex valued features
-        norm = torch.sqrt((x*x.conj()).real)
-    except:
-        # calculate the norm of a real valued feature
-        norm = torch.abs(x)
+  #   try:
+		# # calculate the norm of complex valued features
+  #       norm = torch.sqrt((x*x.conj()).real)
+  #   except:
+  #       # calculate the norm of a real valued feature
+  #       norm = torch.abs(x)
+
+    norm = torch.sqrt(x_real**2 + x_imag**2)
     
     # return the resulting norm
     return norm
 
-def complex_max_pool(x, pool):
+
+    ########### CHAOS
+def complex_max_pool(x_real, x_imag, pool):
     """
     Function to apply MaxPool on complex features.
 
@@ -123,19 +173,51 @@ def complex_max_pool(x, pool):
     Outputs:
         result - Resulting feature after MaxPool. Shape: [B, C, W, H]
     """
-	
-	# calculate the norm
-    norm = complex_norm(x)
-	
-	# retrieve the indices of the maxpool
+    
+    # calculate the norm
+    norm = complex_norm(x_real,x_imag)    
+    # retrieve the indices of the maxpool
     _, indices = pool(norm)
 
-	# retrieve the associated values of the indices with the highest norm
-    flattened_tensor = x.flatten(start_dim=2)
-    output = flattened_tensor.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
+    # retrieve the associated values of the indices with the highest norm
+    flattened_tensor_real = x_real.flatten(start_dim=2)
+    flattened_tensor_imag = x_imag.flatten(start_dim=2)
+    
+    output_real = flattened_tensor_real.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
+    output_imag = flattened_tensor_imag.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
 
     # return the values with the highest norm
-    return output
+    return output_real, output_imag
+
+#################### /CHAOS
+
+# def complex_max_pool(x, pool):
+#     """
+#     Function to apply MaxPool on complex features.
+
+#     Inputs:
+#         x - Batch of complex features. Shape: [B, C, W, H]
+#                 B - batch size
+#                 C - channels per feature
+#                 W- feature width
+#                 H - feature height
+#         pool - Standard PyTorch MaxPool module.
+#     Outputs:
+#         result - Resulting feature after MaxPool. Shape: [B, C, W, H]
+#     """
+	
+# 	# calculate the norm
+#     norm = complex_norm(x)
+	
+# 	# retrieve the indices of the maxpool
+#     _, indices = pool(norm)
+
+# 	# retrieve the associated values of the indices with the highest norm
+#     flattened_tensor = x.flatten(start_dim=2)
+#     output = flattened_tensor.gather(dim=2, index=indices.flatten(start_dim=2)).view_as(indices)
+
+#     # return the values with the highest norm
+#     return output
 
 def complex_batchnorm(x, x_complex=None):
     """
