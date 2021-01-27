@@ -118,6 +118,9 @@ def train_model(args):
         # initialize the Lightning trainer
         trainer = pl.Trainer(default_root_dir=args.log_dir,
                         checkpoint_callback=ModelCheckpoint(
+                            monitor='val_acc',
+                            mode='max',
+                            save_top_k=2,
                             save_weights_only=True),
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
