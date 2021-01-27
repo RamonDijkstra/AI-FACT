@@ -15,7 +15,7 @@
 ###############################################################################
 
 """
-Complex LeNet model
+Complex VGG-16 model
 """
 
 # Adapted from https://github.com/wavefrontshaping/complexPyTorch
@@ -112,10 +112,10 @@ class Complex_VGG16(pl.LightningModule):
 
         self.encoder_layers = self.input_net
         #When using CIFAR-10 dataset:
-        # self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
 
         #When using CUB-200 dataset:
-        self.encoder = EncoderGAN(self.input_net, 50176, self.k, self.lr)
+        # self.encoder = EncoderGAN(self.input_net, 50176, self.k, self.lr)
 
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
@@ -169,7 +169,7 @@ class Complex_VGG16(pl.LightningModule):
 
         # log the train accuracy
         result = self.softmax(out)
-        preds = out.argmax(dim=-1)
+        preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('train_acc', acc)
 
@@ -353,7 +353,6 @@ class VGG16ProcessingModule(nn.Module):
 
         # Preact 3c
         intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real, encoded_batch_imag)
-        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
@@ -447,7 +446,12 @@ class VGG16Decoder(nn.Module):
         # initialize the softmax layer
         self.num_classes = num_classes
 
-        #self.fc1 = nn.Linear(2048, 4096)
+        # When using CUB200:
+        # self.fc1 = nn.Linear(2048, 4096)
+
+        # When using CIFAR10:
+        self.fc1 = nn.Linear(512, 4096)
+
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -479,8 +483,6 @@ class VGG16Decoder(nn.Module):
         decoded_batch = encoded_batch.real
 
         decoded_batch = decoded_batch.reshape(decoded_batch.shape[0], -1)
-
-        self.fc1 = nn.Linear(decoded_batch.shape[1], 4096).to(self.device)
 
         decoded_batch = self.fc1(decoded_batch)
         decoded_batch = self.fc2(decoded_batch)
