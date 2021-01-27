@@ -157,7 +157,8 @@ class VGG16(pl.LightningModule):
         )
 
         #Linear layers from original papers
-        self.fc1 = nn.Linear(512, 4096)
+        # TODO change when CIFAR10/CUB200
+        self.fc1 = nn.Linear(2048, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
         
