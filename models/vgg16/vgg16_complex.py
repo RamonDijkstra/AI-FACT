@@ -104,11 +104,11 @@ class Complex_VGG16(pl.LightningModule):
         #     preact3b_conv
         # )
 
-        # self.input_net = nn.Sequential(
-        #     conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
-        #     preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
-        #     preact3b_conv
-        # )
+        self.input_net = nn.Sequential(
+            conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
+            preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
+            preact3b_conv
+        )
 
         #number depended on dataset
         self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
@@ -344,8 +344,9 @@ class VGG16ProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         # Preact 3c
-        intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
+        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
         )
@@ -356,78 +357,62 @@ class VGG16ProcessingModule(nn.Module):
         )
 
         # Pool 3
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         # Preact 4a
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
         )
 
         # Preact 4b
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
         )
 
         # Preact 4c
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
         )
 
         # Pool 4
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
+        
 
         # Preact 5a
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact5a_conv_imag
         )
 
         # Preact 5b
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
         )
 
         # Preact 5c
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
         )
 
         # Pool 5
-        intermediate_real, intermediate_imag = complex_max_pool(
-            intermediate_real, self.pool
-        ), complex_max_pool(
-            intermediate_imag, self.pool
-        )
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         # Last batchnorm
-        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
         
         # Last ReLU
-        intermediate_real, intermediate_imag = complex_relu(
-            intermediate_real, self.device
-        ), complex_relu(
-            intermediate_imag, 
-            self.device
-        )
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
         x = torch.complex(intermediate_real, intermediate_imag)
 
@@ -479,10 +464,11 @@ class VGG16Decoder(nn.Module):
         """
         
     	# rotate the features back to their original state
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
+        # decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
         # get rid of the imaginary part of the complex features
-        decoded_batch = decoded_batch.real
+        # decoded_batch = decoded_batch.real
+        decoded_batch = encoded_batch.real
 
         decoded_batch = decoded_batch.reshape(decoded_batch.shape[0], -1)
 
