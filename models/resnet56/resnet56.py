@@ -10,7 +10,7 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to conditions.
 #
-# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte 
+# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte
 # Date Created: 2020-01-08
 ###############################################################################
 
@@ -48,9 +48,9 @@ class ResNet(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
             num_blocks - Number of blocks per module. Default = [19,18,18]
-                (ResNet56)
+                (ResNet-56)
         """
-        super(ResNet, self).__init__()       
+        super(ResNet, self).__init__()
         self.save_hyperparameters()
 
         # save the inputs
@@ -101,7 +101,7 @@ class ResNet(pl.LightningModule):
             )
         self.blocks = nn.Sequential(*blocks)
 
-        # initialize the output layers 
+        # initialize the output layers
         self.output_net = nn.Sequential(
             nn.AdaptiveAvgPool2d((1,1)),
             nn.Flatten(),
@@ -110,7 +110,7 @@ class ResNet(pl.LightningModule):
 
         # softmax is used to obtain the accuracy
         self.softmax = nn.Softmax(dim=1)
-        
+
         # initialize the loss function of the complex LeNet
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -118,17 +118,17 @@ class ResNet(pl.LightningModule):
         """
         Function to configure the optimizers
         """
-        
+
         # initialize optimizer for the entire model
         model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        
+
         # return the optimizer
         return model_optimizer
 
     def training_step(self, batch, optimizer_idx):
         """
         Training step of the standard ResNet-56 model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -138,7 +138,7 @@ class ResNet(pl.LightningModule):
         Outputs:
 			loss - Tensor representing the model loss.
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
@@ -146,24 +146,24 @@ class ResNet(pl.LightningModule):
         x = self.encoder_layers(x)
         x = self.blocks(x)
         out = self.output_net(x)
-        
+
         # log the training accuracy
         preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('train_acc', acc)
-        
+
         # log the training loss
         loss = self.loss_fn(out, labels)
         self.log("train_loss", loss)
 
         # return the loss
         return loss
-        
+
     def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the standard ResNet-56 model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -173,10 +173,10 @@ class ResNet(pl.LightningModule):
         Outputs:
 			loss - Tensor representing the model loss.
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
-        
+
         # run the image batch through the network
         x = self.encoder_layers(x)
         x = self.blocks(x)
@@ -186,7 +186,7 @@ class ResNet(pl.LightningModule):
         preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        
+
         # log the validation loss
         loss = self.loss_fn(out, labels)
 
@@ -199,7 +199,7 @@ class ResNet(pl.LightningModule):
     def test_step(self, batch, optimizer_idx):
         """
         Test step of the standard ResNet-56 model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -209,7 +209,7 @@ class ResNet(pl.LightningModule):
         Outputs:
 			loss - Tensor representing the model loss.
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
@@ -217,12 +217,12 @@ class ResNet(pl.LightningModule):
         x = self.encoder_layers(x)
         x = self.blocks(x)
         out = self.output_net(x)
-        
+
         # log the test accuracy
         preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        
+
         # log the test loss
         loss = self.loss_fn(out, labels)
 
@@ -245,7 +245,7 @@ class ResNetBlock(nn.Module):
         super().__init__()
         if not subsample:
             c_out = c_in
-            
+
         # Network representing F
         self.net = nn.Sequential(
             # No bias needed as the Batch Norm handles it
@@ -255,11 +255,11 @@ class ResNetBlock(nn.Module):
             nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(c_out)
         )
-        
+
         # 1x1 convolution with stride 2 means we take the upper left value, and transform it to new output size
         self.downsample = nn.Conv2d(c_in, c_out, kernel_size=1, stride=2) if subsample else None
         self.act_fn = act_fn
-        
+
     def forward(self, x):
         z = self.net(x)
         if self.downsample is not None:
