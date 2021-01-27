@@ -94,7 +94,7 @@ class UNet(pl.LightningModule):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.training = training
-        self.upsample = nn.Upsample(scale_factor=2)
+        self.upsample = nn.Upsample(size=(32,32))
 
         self.gan = generator
         # self.input_net = input_net
@@ -169,13 +169,16 @@ class UNet(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, _ = batch
-        # x = x / 255
-
+        print(self.gan)
         with torch.no_grad():
             encoded_x, thetas = self.gan(x, training=False)
+        encoded_x = encoded_x / 255
 
-        # encoded_x = self.upsample(encoded_x)
-        enc_ftrs = self.encoder(encoded_x.real)
+        hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
+        encoded_x = hoi(encoded_x.real)
+        encoded_x = self.upsample(encoded_x)
+
+        enc_ftrs = self.encoder(encoded_x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:

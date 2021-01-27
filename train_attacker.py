@@ -119,7 +119,7 @@ def train_model(args):
         gan_checkpoint_dir = gan_model_dir + "\checkpoints\\"
         gan_last_ckpt = [f for f in listdir(gan_checkpoint_dir) if isfile(join(gan_checkpoint_dir, f))][-1:][0]
         gan_checkpoint_path = gan_checkpoint_dir + gan_last_ckpt
-        gan_hparams_file = gan_model_dir + "\hparams.yml"
+        gan_hparams_file = gan_model_dir + "\hparams.yaml"
         gan_model = gan_model.load_from_checkpoint(
             checkpoint_path=gan_checkpoint_path,
             hparams_file=gan_hparams_file
@@ -128,53 +128,40 @@ def train_model(args):
     else:
         generator = None
 
-    model = initialize_model(args.model, num_classes, args.lr, args.k, generator)
+    model = UNet(generator=generator, num_classes=num_classes, lr= args.lr)
 
-    if args.load_dict:
+
+    if args.load_dict is not None:
         print('Loading model..')
         model_dir = args.load_dict
         checkpoint_dir = model_dir + "\checkpoints\\"
         last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
         checkpoint_path = checkpoint_dir + last_ckpt
-        hparams_file = model_dir + "\hparams.yml"
+        hparams_file = model_dir + "\hparams.yaml"
         model = model.load_from_checkpoint(
             checkpoint_path=checkpoint_path,
             hparams_file=hparams_file
         )
         print('Model successfully loaded')
+        print("Started testing...")
+        model.gan = generator
+        trainer.test(model=model, test_dataloaders=testloader)
+
     else:
         # train the model
         trainer.fit(model, trainloader, valloader)
+        path = 'saved_models/'
+        allfiles = [f for f in listdir(path) if isfile(join(path, f))]
+        torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(len(allfiles)) + '.pt')
 
     # save the model    
-    path = 'saved_models/'
-    allfiles = [f for f in listdir(path) if isfile(join(path, f))]
-    torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(len(allfiles)) + '.pt')
+
 
     # test the model
-    # trainer.test(model=model, test_dataloaders=testloader)
+    
 
     # return the model
     return model
-
-def initialize_model(model='UNet', num_classes=3, lr=3e-4, k=2, generator=None):
-    """
-    Function for initializing a model based on the given command line arguments.
-    
-    Inputs:
-        model - String indicating the model to use. Default = 'LeNet'
-        num_classes - Int indicating the number of classes. Default = 10
-        lr - Float indicating the optimizer learning rate. Default = 3e-4
-        k - Level of anonimity. k-1 fake features are generated
-            to train the discriminator. Default = 2
-    """
-    
-    # initialize the model if possible
-    if model in model_dict:
-        return model_dict[model](generator, num_classes=num_classes, training=True)
-    # alert the user if the given model does not exist
-    else:
-        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
 
 def initialize_gan_model(model='Complex_LeNet', num_classes=3, lr=3e-4, k=2):
     """
@@ -238,7 +225,7 @@ if __name__ == '__main__':
                         help='Minibatch size. Default is 4.')
     parser.add_argument('--num_workers', default=0, type=int,
                         help='Number of workers to use in the data loaders. Default is not 0 (truly deterministic).')
-    parser.add_argument('--training', default=True, type=bool,
+    parser.add_argument('--training', default=False, type=bool,
                         help='Whether the U-Net is training or testing')
                         
     # training hyperparameters
