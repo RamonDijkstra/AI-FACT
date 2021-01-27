@@ -89,7 +89,7 @@ class Decoder(nn.Module):
 
 
 class UNet(pl.LightningModule):
-    def __init__(self, generator, enc_chs=(6,64,128,256,512), dec_chs=(512, 256, 128, 64), num_classes=6, retain_dim=True, out_sz=(32,32), training=True, lr=3e-4):
+    def __init__(self, generator=None, enc_chs=(3,64,128,256,512), dec_chs=(512, 256, 128, 64), num_classes=3, retain_dim=True, out_sz=(32,32), training=True, lr=3e-4):
         super().__init__()
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -138,12 +138,9 @@ class UNet(pl.LightningModule):
         """
 
         x, _ = batch
+        x = x / 255
 
-        with torch.no_grad():
-            encoded_x, thetas = self.gan(x, training=False)
-
-        # encoded_x = self.upsample(encoded_x)
-        enc_ftrs = self.encoder(encoded_x.real)
+        enc_ftrs = self.encoder(x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:
@@ -156,13 +153,9 @@ class UNet(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, _ = batch
-        # x = x / 255
+        x = x / 255
 
-        with torch.no_grad():
-            encoded_x, thetas = self.gan(x, training=False)
-
-        # encoded_x = self.upsample(encoded_x)
-        enc_ftrs = self.encoder(encoded_x.real)
+        enc_ftrs = self.encoder(x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:
@@ -190,4 +183,5 @@ class UNet(pl.LightningModule):
 
         loss = self.loss_fn(out, x)
         self.log("total/reconstruction_error", loss)
+        
         return loss

@@ -83,9 +83,9 @@ def train_model(args):
 
     early_stop_callback = EarlyStopping(
         monitor='val/loss',
-        min_delta=0.005,
+        min_delta=0,
         patience=3,
-        verbose=False,
+        verbose=True,
         mode='min'
     )
 
@@ -108,28 +108,27 @@ def train_model(args):
     num_classes = 3
 
     # show the progress bar if enabled
-    if not args.progress_bar:
-        print("\nThe progress bar has been surpressed. For updates on the training progress, " + \
-              "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
-              "want to see the progress bar, use the argparse option \"progress_bar\".\n")
+    if not args.training:
+        if not args.progress_bar:
+            print("\nThe progress bar has been surpressed. For updates on the training progress, " + \
+                "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
+                "want to see the progress bar, use the argparse option \"progress_bar\".\n")
 
-    gan_model = initialize_gan_model(args.gan_model, num_classes, args.lr, args.k)
-    gan_model_dir = args.load_gan
-    gan_checkpoint_dir = gan_model_dir + "\checkpoints\\"
-    gan_last_ckpt = [f for f in listdir(gan_checkpoint_dir) if isfile(join(gan_checkpoint_dir, f))][-1:][0]
-    gan_checkpoint_path = gan_checkpoint_dir + gan_last_ckpt
-    gan_hparams_file = gan_model_dir + "\hparams.yml"
-    gan_model = gan_model.load_from_checkpoint(
-        checkpoint_path=gan_checkpoint_path,
-        hparams_file=gan_hparams_file
-    )
-    generator = gan_model.encoder.generator
-    # input_net = gan_model.input_net
+        gan_model = initialize_gan_model(args.gan_model, num_classes, args.lr, args.k)
+        gan_model_dir = args.load_gan
+        gan_checkpoint_dir = gan_model_dir + "\checkpoints\\"
+        gan_last_ckpt = [f for f in listdir(gan_checkpoint_dir) if isfile(join(gan_checkpoint_dir, f))][-1:][0]
+        gan_checkpoint_path = gan_checkpoint_dir + gan_last_ckpt
+        gan_hparams_file = gan_model_dir + "\hparams.yml"
+        gan_model = gan_model.load_from_checkpoint(
+            checkpoint_path=gan_checkpoint_path,
+            hparams_file=gan_hparams_file
+        )
+        generator = gan_model.encoder.generator
+    else:
+        generator = None
 
-    print(gan_model)
-    # Depending on model
     model = initialize_model(args.model, num_classes, args.lr, args.k, generator)
-    print(model)
 
     if args.load_dict:
         print('Loading model..')
@@ -153,7 +152,7 @@ def train_model(args):
     torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(len(allfiles)) + '.pt')
 
     # test the model
-    trainer.test(model=model, test_dataloaders=testloader)
+    # trainer.test(model=model, test_dataloaders=testloader)
 
     # return the model
     return model
@@ -229,7 +228,7 @@ if __name__ == '__main__':
                             # model hyperparameters
     parser.add_argument('--gan_model', default='Complex_LeNet', type=str,
                         help='What model to use. Default is Complex_LeNet.',
-                        choices=['Complex_LeNet', 'Complex_AlexNet', 'Complex_ResNet-56','Complex_ResNet-110'])
+                        choices=['Complex_LeNet', 'Complex_VGG16', 'Complex_ResNet-56','Complex_ResNet-110'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
@@ -239,6 +238,8 @@ if __name__ == '__main__':
                         help='Minibatch size. Default is 4.')
     parser.add_argument('--num_workers', default=0, type=int,
                         help='Number of workers to use in the data loaders. Default is not 0 (truly deterministic).')
+    parser.add_argument('--training', default=True, type=bool,
+                        help='Whether the U-Net is training or testing')
                         
     # training hyperparameters
     parser.add_argument('--epochs', default=10, type=int,
@@ -249,7 +250,7 @@ if __name__ == '__main__':
                         help='Directory where the PyTorch Lightning logs are created. Default is GAN_logs/.')
     parser.add_argument('--load_dict', default=None, type=str,
                         help='Directory where the model is stored. Default is inference_attack_model.')
-    parser.add_argument('--load_gan', default=None, type=str, required=True,
+    parser.add_argument('--load_gan', default=None, type=str,
                         help='Directory where the model is stored. Default is inference_attack_model.')
     parser.add_argument('--progress_bar', action='store_true',
                         help='Use a progress bar indicator. Disabled by default.')
