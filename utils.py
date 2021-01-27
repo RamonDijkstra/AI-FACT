@@ -235,7 +235,7 @@ def complex_batchnorm(x_real, x_imag):
     denominator_real = x_real.view(x_real.shape[0], -1)
     denominator_imag = x_imag.view(x_imag.shape[0], -1)
     denominator_real = complex_norm(denominator_real, denominator_imag)**2
-    denominator_imag = complex_norm(denominator_imag, denominator_imag)**2
+    denominator_imag = complex_norm(denominator_real, denominator_imag)**2
     denominator_real = denominator_real.mean(dim=1)
     denominator_imag = denominator_imag.mean(dim=1)
     denominator_real = torch.sqrt(denominator_real)
@@ -246,4 +246,4 @@ def complex_batchnorm(x_real, x_imag):
     result_real = x_real/denominator_real
     result_imag = x_imag/denominator_imag
 
-    return result
+    return result_real, result_imag
