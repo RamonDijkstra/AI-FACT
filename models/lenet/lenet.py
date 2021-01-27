@@ -169,6 +169,9 @@ class LeNet(pl.LightningModule):
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
 
+        # return the loss
+        return loss
+
     def test_step(self, batch, optimizer_idx):
         """
         Test step of the standard LeNet model.
