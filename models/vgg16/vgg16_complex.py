@@ -10,7 +10,7 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to conditions.
 #
-# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte 
+# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte
 # Date Created: 2020-01-08
 ###############################################################################
 
@@ -48,7 +48,7 @@ class Complex_VGG16(pl.LightningModule):
         """
         super(Complex_VGG16, self).__init__()
         self.save_hyperparameters()
-        
+
         # save the inputs
         self.num_classes = num_classes
         self.lr = lr
@@ -112,11 +112,11 @@ class Complex_VGG16(pl.LightningModule):
 
         self.encoder_layers = self.input_net
         #number depended on dataset
-        self.encoder = EncoderGAN(self.input_net, (50176), self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
-        
+
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -124,17 +124,17 @@ class Complex_VGG16(pl.LightningModule):
         """
         Function to configure the optimizers
         """
-        
+
         # initialize optimizer for the entire model
         model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        
+
         # return the optimizer
         return model_optimizer
 
     def training_step(self, batch, optimizer_idx):
         """
         Training step of the complex LeNet model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -150,17 +150,16 @@ class Complex_VGG16(pl.LightningModule):
             discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
             labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
 
-
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
-        
+
         # decode the feature from
         out = self.decoder(out, thetas)
 
@@ -169,7 +168,7 @@ class Complex_VGG16(pl.LightningModule):
         preds = out.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('train_acc', acc)
-        
+
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
         model_loss = self.loss_fn(out, labels)
@@ -181,11 +180,11 @@ class Complex_VGG16(pl.LightningModule):
         self.log("total/loss", loss)
 
         return loss
-        
+
     def validation_step(self, batch, batch_idx):
         """
         Validation step of the complex LeNet model.
-        
+
         Inputs:
             image_batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -204,19 +203,19 @@ class Complex_VGG16(pl.LightningModule):
             discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
             labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-        
+
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
-        
+
         # decode the feature from the processing unit
         out = self.decoder(out, thetas)
-        
+
         # calculate the predictions
         result = self.softmax(out)
         preds = result.argmax(dim=-1)
@@ -224,7 +223,7 @@ class Complex_VGG16(pl.LightningModule):
 
         model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
-        
+
         # log the validation accuracy
         self.log('val_loss', loss)
         self.log('val_acc', acc)
@@ -232,7 +231,7 @@ class Complex_VGG16(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         """
         Test step of the complex LeNet model.
-        
+
         Inputs:
             image_batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -251,19 +250,19 @@ class Complex_VGG16(pl.LightningModule):
             discriminator_predictions - Predictions from the discriminator. Shape: [B * k, 1]
             labels - Real labels of the encoded features. Shape: [B * k, 1]
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-        
+
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
-        
+
         # decode the feature from the processing unit
         out = self.decoder(out, thetas)
-        
+
         # calculate the predictions
         result = self.softmax(out)
         preds = result.argmax(dim=-1)
@@ -279,7 +278,7 @@ class VGG16ProcessingModule(nn.Module):
     """
 	VGG16 processing module model
 	"""
-    
+
     def __init__(self, num_classes):
         """
         Processing module of the network
@@ -325,7 +324,7 @@ class VGG16ProcessingModule(nn.Module):
         #Preactivation 5c)
         self.preact5c_conv_real = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
         self.preact5c_conv_imag = nn.Conv2d(512, 512, kernel_size = (3, 3), stride=1, padding=1, bias=False)
-    
+
     def forward(self, encoded_batch):
         """
         Inputs:
@@ -341,7 +340,7 @@ class VGG16ProcessingModule(nn.Module):
                 W- feature width
                 H - feature height
         """
-        
+
         # transform the encoded features using the model layers
         # TODO: make this work
 
@@ -349,9 +348,9 @@ class VGG16ProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
         # Preact 3c
-        # intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real), complex_batchnorm(encoded_batch_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(encoded_batch_real, encoded_batch_imag)
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
-        # intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact3c_conv_real, self.preact3c_conv_imag
         )
@@ -365,21 +364,21 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         # Preact 4a
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4a_conv_real, self.preact4a_conv_imag
         )
 
         # Preact 4b
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4b_conv_real, self.preact4b_conv_imag
         )
 
         # Preact 4c
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact4c_conv_real, self.preact4c_conv_imag
@@ -387,24 +386,24 @@ class VGG16ProcessingModule(nn.Module):
 
         # Pool 4
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
-        
+
 
         # Preact 5a
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5a_conv_real, self.preact5a_conv_imag
         )
 
         # Preact 5b
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5b_conv_real, self.preact5b_conv_imag
         )
 
         # Preact 5c
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_conv(
             intermediate_real, intermediate_imag, self.preact5c_conv_real, self.preact5c_conv_imag
@@ -414,15 +413,15 @@ class VGG16ProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         # Last batchnorm
-        # intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
-        
+        intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
+
         # Last ReLU
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
         x = torch.complex(intermediate_real, intermediate_imag)
 
         return x
-    
+
     @property
     def device(self):
         """
@@ -434,7 +433,7 @@ class VGG16Decoder(nn.Module):
     """
 	VGG16 decoder model
 	"""
-    
+
     def __init__(self, num_classes):
         """
         Decoder module of the network
@@ -443,7 +442,8 @@ class VGG16Decoder(nn.Module):
 
         # initialize the softmax layer
         self.num_classes = num_classes
-        
+
+        #self.fc1 = nn.Linear(2048, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -466,7 +466,7 @@ class VGG16Decoder(nn.Module):
                 W- feature width
                 H - feature height
         """
-        
+
     	# rotate the features back to their original state
         # decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
@@ -476,16 +476,15 @@ class VGG16Decoder(nn.Module):
 
         decoded_batch = decoded_batch.reshape(decoded_batch.shape[0], -1)
 
-
         self.fc1 = nn.Linear(decoded_batch.shape[1], 4096).to(self.device)
 
         decoded_batch = self.fc1(decoded_batch)
         decoded_batch = self.fc2(decoded_batch)
         result = self.fc3(decoded_batch)
-        
+
         # apply the softmax layer#
         # decoded_batch = self.softmax(decoded_batch)
-        
+
         # return the decoded batch
         return result
 
