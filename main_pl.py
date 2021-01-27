@@ -58,8 +58,8 @@ model_dict['LeNet'] = LeNet
 model_dict['Complex_LeNet'] = ComplexLeNet
 model_dict['AlexNet'] = AlexNet
 model_dict['Complex_AlexNet'] = ComplexAlexNet
-model_dict['ResNet-110'] = ResNet110
-model_dict['ResNet-56'] = ResNet56
+model_dict['ResNet-56'] = ResNet
+model_dict['ResNet-110'] = ResNet
 model_dict['Complex_ResNet-56'] = ComplexResNet56
 model_dict['Complex_ResNet-110'] = ComplexResNet110
 model_dict['VGG-16'] = VGG16
@@ -197,6 +197,8 @@ def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
     
     # initialize the model if possible
     if model in model_dict:
+        if model === 'ResNet-110':
+            return model_dict[model](num_classes, k, lr, num_blocks=[37,36,36])
         return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
     else:
