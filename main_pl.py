@@ -39,10 +39,8 @@ from models.lenet.lenet import *
 from models.lenet.complex_lenet import *
 from models.alexnet.alexnet import *
 from models.alexnet.complex_alexnet import *
-from models.resnet56.resnet56 import *
-from models.resnet56.complex_resnet56 import *
-from models.resnet110.resnet110 import *
-from models.resnet110.complex_resnet110 import *
+from models.resnet.resnet import *
+from models.resnet.complex_resnet import *
 from models.vgg16.vgg16 import *
 from models.vgg16.vgg16_complex import *
 
@@ -58,10 +56,10 @@ model_dict['LeNet'] = LeNet
 model_dict['Complex_LeNet'] = ComplexLeNet
 model_dict['AlexNet'] = AlexNet
 model_dict['Complex_AlexNet'] = ComplexAlexNet
-model_dict['ResNet-110'] = ResNet110
-model_dict['ResNet-56'] = ResNet56
-model_dict['Complex_ResNet-56'] = ComplexResNet56
-model_dict['Complex_ResNet-110'] = ComplexResNet110
+model_dict['ResNet-110'] = ResNet
+model_dict['ResNet-56'] = ResNet
+model_dict['Complex_ResNet-56'] = ComplexResNet
+model_dict['Complex_ResNet-110'] = ComplexResNet
 model_dict['VGG-16'] = VGG16
 model_dict['Complex_VGG-16'] = Complex_VGG16
 
@@ -196,7 +194,12 @@ def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
     """
     
     # initialize the model if possible
-    if model in model_dict:
+  
+    if model == "Complex_ResNet-110" or model == "ResNet-110":
+        return model_dict[model](num_classes, k, lr, num_blocks = [37,36,36])
+    elif model == "Complex_ResNet-56" or model == "ResNet-56":
+        return model_dict[model](num_classes, k, lr, num_blocks = [19,18,18])
+    elif model in model_dict:
         return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
     else:
