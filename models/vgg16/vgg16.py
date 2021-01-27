@@ -149,15 +149,21 @@ class VGG16(pl.LightningModule):
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
+        self.encoder_layers = nn.Sequential(
+            conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
+            preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
+            preact3b_conv
+        )
+
         self.layers = nn.Sequential(
-            conv0, preact1_batch, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_batch, preact2a_ReLU, preact2a_conv, preact2b_batch,
-            preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_batch, preact3a_ReLU, preact3a_conv, preact3b_batch, preact3b_ReLU,
-            preact3b_conv, preact3c_batch, preact3c_ReLU, preact3c_conv, conv3, maxpool3, preact4a_batch, preact4a_ReLU, preact4a_conv, 
+            preact3c_batch, preact3c_ReLU, preact3c_conv, conv3, maxpool3, preact4a_batch, preact4a_ReLU, preact4a_conv, 
             preact4b_batch, preact4b_ReLU, preact4b_conv, preact4c_batch, preact4c_ReLU, preact4c_conv, maxpool4, preact5a_batch, 
             preact5a_ReLU, preact5a_conv, preact5b_batch, preact5b_ReLU, preact5b_conv, preact5c_batch, preact5c_ReLU, preact5c_conv,
             maxpool5, last_batch_layer, last_ReLU_layer
         )
         
+        self.softmax = nn.Softmax(dim=1)
+
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
     
@@ -190,9 +196,8 @@ class VGG16(pl.LightningModule):
         x, labels = batch
         
         # run the image batch through the network
-        for layer in self.layers:
-            #Forward the value from the previous layer
-            x = layer(x)
+        x = self.encoder_layers(x)
+        x = self.layers(x)
     
         #Reshape
         x = x.reshape(x.shape[0], -1)
@@ -203,17 +208,16 @@ class VGG16(pl.LightningModule):
         x = self.fc2(x)
         out = self.fc3(x)
         
-        # apply softmax on the output
-        #out = self.softmax(result)
-
-        # log the train accuracy
-        preds = out.argmax(dim=-1)
+        # calculate the predictions
+        results = self.softmax(out)
+        preds = results.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('train_acc', acc)
-        
-        # log the train loss
+
+        # calculate the model loss
         loss = self.loss_fn(out, labels)
+        
         self.log("train_loss", loss)
+        self.log("train_acc", acc)
 
         # return the loss
         return loss
@@ -236,9 +240,8 @@ class VGG16(pl.LightningModule):
         x, labels = batch
         
         # run the image batch through the network
-        for layer in self.layers:
-            #Forward the value from the previous layer
-            x = layer(x)
+        x = self.encoder_layers(x)
+        x = self.layers(x)
     
         #Reshape
         x = x.reshape(x.shape[0], -1)
@@ -249,16 +252,15 @@ class VGG16(pl.LightningModule):
         x = self.fc2(x)
         out = self.fc3(x)
             
-        # apply softmax on the output
-        #out = self.softmax(result)
-
-        # log the validation accuracy
-        preds = out.argmax(dim=-1)
+        # calculate the predictions
+        results = self.softmax(out)
+        preds = results.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('val_acc', acc)
-        
-        # log the validation loss
+
+        # calculate the model loss
         loss = self.loss_fn(out, labels)
+
+        self.log('val_acc', acc)
         self.log("val_loss", loss)
 
         # return the loss
@@ -282,9 +284,8 @@ class VGG16(pl.LightningModule):
         x, labels = batch
         
         # run the image batch through the network
-        for layer in self.layers:
-            #Forward the value from the previous layer
-            x = layer(x)
+        x = self.encoder_layers(x)
+        x = self.layers(x)
     
         #Reshape
         x = x.reshape(x.shape[0], -1)
@@ -295,16 +296,15 @@ class VGG16(pl.LightningModule):
         x = self.fc2(x)
         out = self.fc3(x)
             
-        # apply softmax on the output
-        #out = self.softmax(result)
-
-        # log the validation accuracy
-        preds = out.argmax(dim=-1)
+        # calculate the predictions
+        results = self.softmax(out)
+        preds = results.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        self.log('test_acc', acc)
-        
-        # log the validation loss
+
+        # calculate the model loss
         loss = self.loss_fn(out, labels)
+        
+        self.log('test_acc', acc)
         self.log("test_loss", loss)
 
         # return the loss
