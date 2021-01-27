@@ -221,12 +221,14 @@ class Generator(nn.Module):
         b = (b / b_magnitude) * a_magnitude
 
         # sample angles to rotate the features for the real rotation
-        thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
+        # thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
+        thetas = torch.ones(image_dimensions[0], 1, 1, 1).to(self.device)
         # thetas = torch.exp(1j * thetas)
         
         # compute encoded real feature
         # x = (a + b * 1j) * thetas
-        x = torch.complex(a,b) * torch.exp(1j * thetas)
+        # x = torch.complex(a,b) * torch.exp(1j * thetas)
+        x = torch.complex(a,b) * thetas
         x = x.to(self.device)
         
         # check if training
