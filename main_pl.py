@@ -197,7 +197,7 @@ def initialize_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
     
     # initialize the model if possible
     if model in model_dict:
-        if model === 'ResNet-110':
+        if model == 'ResNet-110':
             return model_dict[model](num_classes, k, lr, num_blocks=[37,36,36])
         return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
