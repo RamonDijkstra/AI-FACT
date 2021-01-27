@@ -221,11 +221,13 @@ class Generator(nn.Module):
         b = (b / b_magnitude) * a_magnitude
 
         # sample angles to rotate the features for the real rotation
-        thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
-        thetas = torch.exp(1j * thetas)
-        
-        # compute encoded real feature
-        x = (a + b * 1j) * thetas
+        #thetas = torch.Tensor(image_dimensions[0], 1, 1, 1).uniform_(0, 2 * np.pi).to(self.device)
+        thetas = torch.ones(image_dimensions[0], 1, 1, 1).to(self.device)
+        #thetas = torch.exp(1j * thetas)
+        #x =  torch.complex(a,b) * torch.exp(1j * thetas)
+
+        x = torch.complex(a,b) * thetas
+
         x = x.to(self.device)
         
         # check if training
@@ -238,17 +240,18 @@ class Generator(nn.Module):
         
             # sample k-1 delta angles to rotate the features for fake examples
             delta_thetas = torch.Tensor((self.k-1) * image_dimensions[0], 1, 1, 1).uniform_(0, np.pi).to(self.device)
-            delta_thetas = torch.exp(1j * delta_thetas)
+            #delta_thetas = torch.exp(1j * delta_thetas)
         
             # compute encoded fake features
             fake_a = torch.cat([a]*(self.k-1),dim=0)
-            fake_x = (fake_a + fake_b *1j) * delta_thetas
+            fake_x = torch.complex(fake_a, fake_b) * torch.exp(1j * delta_thetas)
             fake_x = fake_x.to(self.device)
             
             # return real feature, real encoded feature, thetas, fake encoded feature and delta thetas
             return a, x, thetas, fake_x, delta_thetas
         else:
             # return the real encoded features and thetas
+            print("HALLOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
             return x, thetas
 
 class Discriminator(nn.Module):
