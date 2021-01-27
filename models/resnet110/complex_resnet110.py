@@ -72,6 +72,7 @@ class ComplexResNet110(pl.LightningModule):
 
 
         # initialize the different modules of the network
+        self.encoder_layers = input_net
         self.encoder = EncoderGAN(input_net,Discriminator_linear_shape, self.k, self.lr)
 
         #self.encoder = GAN(self.k, self.lr, num_blocks[0])
@@ -172,7 +173,7 @@ class ComplexResNet110(pl.LightningModule):
         out = self.proccessing_module(out)
 
         out = self.decoder(out, thetas)
-        
+
         # log the validation accuracy
         preds = self.softmax(out)
         preds = preds.argmax(dim=-1)

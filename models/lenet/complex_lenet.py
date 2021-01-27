@@ -59,6 +59,8 @@ class ComplexLeNet(pl.LightningModule):
 
         # initialize the different modules of the network
         encoder_conv = nn.Conv2d(3, 6, 5)
+
+        self.encoder_layers = encoder_conv
         # self.encoder_conv = nn.Conv2d(3, 6, 5)
         self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
         self.proccessing_module = LenetProcessingModule(self.num_classes)

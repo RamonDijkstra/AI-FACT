@@ -87,6 +87,7 @@ class ComplexResNet56(pl.LightningModule):
                                              c_out=16)
                 )
         self.input_net = nn.Sequential(*blocks)
+        self.encoder_layers = self.input_net
 
         # initialize the different modules of the network
         self.encoder = EncoderGAN(self.input_net, self.k, self.lr)
