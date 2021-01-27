@@ -121,17 +121,12 @@ class ComplexResNet110(pl.LightningModule):
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
 
-        # send the encoded feature to the processing unit
-        #print(out.shape)
-        #print(out[0])
-
 
         out = self.proccessing_module(out)
         
         # # decode the feature from
         out = self.decoder(out, thetas)
 
-        #print(result.shape)
 
         # Log the train accuracy
         result = self.softmax(out)
@@ -269,18 +264,10 @@ class Resnet_Decoder(nn.Module):
 
     def forward(self,encoded_batch, thetas):
         #Rerotate
-        #print(encoded_batch.shape)
-        #print(thetas.shape)
-        print(encoded_batch.shape)
-        print(thetas.shape)
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:,None,None,None]
 
 
-
-                #Make real
-
         decoded_batch = decoded_batch.real
-        #print(decoded_batch.shape)
 
         # Go through Blocks and output net
         decoded_batch = self.blocks(decoded_batch)
@@ -354,13 +341,13 @@ class ResNetBlock(nn.Module):
             #print(encoded_batch_imag.shape)
             intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.Conv1_real, self.Conv1_imag)
             #print(intermediate_real.shape)
-            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, self.device), complex_batchnorm(intermediate_imag, self.device)
+            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
             #print(intermediate_real.shape)
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+            intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
             intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.Conv2_real, self.Conv2_imag)
-            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, self.device), complex_batchnorm(intermediate_imag, self.device)
+            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
 
             #print(intermediate_real.shape)
             #print(intermediate_imag.shape)
@@ -374,7 +361,7 @@ class ResNetBlock(nn.Module):
             intermediate_real = intermediate_real + encoded_batch_real
             intermediate_imag = intermediate_imag + encoded_batch_imag
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+            intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
             x = torch.complex(intermediate_real, intermediate_imag)
             #print("Ik ga uit de forward")

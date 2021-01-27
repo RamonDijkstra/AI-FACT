@@ -90,7 +90,7 @@ class ComplexResNet56(pl.LightningModule):
         self.encoder_layers = self.input_net
 
         # initialize the different modules of the network
-        self.encoder = EncoderGAN(self.input_net, self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, discriminator_linear_shape, self.k, self.lr)
         self.proccessing_module = Resnet_Processing_module(num_blocks[1])
         self.decoder = Resnet_Decoder(num_blocks[2], self.num_classes)
         
@@ -152,6 +152,8 @@ class ComplexResNet56(pl.LightningModule):
         self.log("train_total-loss", loss)
         self.log("train_acc", acc)
 
+        return loss
+
     def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the complex LeNet model.
@@ -195,6 +197,8 @@ class ComplexResNet56(pl.LightningModule):
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
 
+        return loss
+
     def test_step(self, batch, batch_idx):
         """
         Test step of the complex LeNet model.
@@ -237,6 +241,7 @@ class ComplexResNet56(pl.LightningModule):
         self.log("test_model_loss", model_loss)
         self.log("test_total-loss", loss)
         self.log("test_acc", acc)
+
 
 class Resnet_Processing_module(nn.Module):
     """
@@ -459,12 +464,12 @@ class ResNetBlock(nn.Module):
             
             # pass the encoded feature through the layers
             intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv1_real, self.conv1_imag)
-            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device, c=1), complex_relu(intermediate_imag, self.device, c=1)
+            intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device, c=1)
 
             intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
-            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real), complex_batchnorm(intermediate_imag)
+            intermediate_real, intermediate_imag = complex_batchnorm(intermediate_real, intermediate_imag)
             
             # check whether downsampling
             if self.downsample_conv_real is not None:
@@ -474,7 +479,7 @@ class ResNetBlock(nn.Module):
             intermediate_real = intermediate_real + encoded_batch_real
             intermediate_imag = intermediate_imag + encoded_batch_imag
 
-            intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device, c=1), complex_relu(intermediate_imag, self.device, c=1)
+            intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device, c=1)
 
             # recombine the real and imaginary parts into a complex feature
             out = torch.complex(intermediate_real, intermediate_imag)
