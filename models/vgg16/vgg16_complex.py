@@ -111,8 +111,12 @@ class Complex_VGG16(pl.LightningModule):
         # )
 
         self.encoder_layers = self.input_net
-        #number depended on dataset
-        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+        #When using CIFAR-10 dataset:
+        # self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+
+        #When using CUB-200 dataset:
+        self.encoder = EncoderGAN(self.input_net, 50176, self.k, self.lr)
+
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
