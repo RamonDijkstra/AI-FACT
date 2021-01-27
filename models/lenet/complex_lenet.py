@@ -59,6 +59,7 @@ class ComplexLeNet(pl.LightningModule):
 
         # initialize the different modules of the network
         encoder_conv = nn.Conv2d(3, 6, 5)
+        # self.encoder_conv = nn.Conv2d(3, 6, 5)
         self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
         self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
@@ -99,6 +100,9 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
+
+        #Terugrotatie mafklapper
+        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
 
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
@@ -144,7 +148,10 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-        
+
+        #Terugrotatie mafklapper
+        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
+
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
         
@@ -189,6 +196,9 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
+
+        #Terugrotatie mafklapper
+        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
         
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
@@ -231,6 +241,7 @@ class LenetProcessingModule(nn.Module):
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        # self.fc1 = nn.Linear(9216, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_classes)
     
@@ -257,20 +268,22 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
 		# pass the encoded feature through the layers
-        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
+        # intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)        
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
+        # intermediate_real, intermediate_imag =  intermediate_real.view(-1, 9216), intermediate_imag.view(-1, 9216)
 
         intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)    
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)    
 
         intermediate_real, intermediate_imag = self.fc2(intermediate_real), self.fc2(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
 
@@ -327,16 +340,12 @@ class LenetDecoder(nn.Module):
                 H - feature height
         """
 
-        print(encoded_batch.shape)
-        print(thetas.shape)
-
-        a = b
-        
     	# rotate the features back to their original state
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas)
         
         # get rid of the imaginary part of the complex features
-        decoded_batch = decoded_batch.real
+        # decoded_batch = decoded_batch.real
+        decoded_batch = encoded_batch.real
         
         # return the decoded batch
         return decoded_batch

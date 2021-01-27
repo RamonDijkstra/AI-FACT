@@ -41,9 +41,11 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
     """
     
     # calculate the convolution on the real and imaginary parts
-    real_out = conv_real(x_real) - conv_imag(x_imag)
-    imag_out = conv_real(x_imag) + conv_imag(x_real)
-    
+    # real_out = conv_real(x_real) - conv_imag(x_imag)
+    # imag_out = conv_real(x_imag) + conv_imag(x_real)
+    real_out = conv_real(x_real)
+    imag_out = conv_imag(x_imag)
+
     # return the convolved real and imaginary parts
     return real_out, imag_out
 
@@ -86,7 +88,7 @@ def complex_conv(x_real, x_imag, conv_real, conv_imag):
 
     ##########CHAOS
 
-def complex_relu(x_real, x_imag, device, x_complex=None, c=None):
+def complex_relu(x_real, x_imag, device, c=None):
     """
     Function to apply ReLu on complex features.
 
@@ -101,9 +103,6 @@ def complex_relu(x_real, x_imag, device, x_complex=None, c=None):
     Outputs:
         result - Resulting features after ReLU. [B, C, W, H]
     """
-
-    # TODO is this correct..?
-    #norm_x = x_complex if x_complex is not None else x
     
     # calculate the denominator
     #x = torch.complex(x_real,x_imag)
@@ -219,7 +218,7 @@ def complex_max_pool(x_real, x_imag, pool):
 #     # return the values with the highest norm
 #     return output
 
-def complex_batchnorm(x, x_complex=None):
+def complex_batchnorm(x_real, x_imag):
     """
     Function to apply batch normalization on complex features.
 
@@ -232,25 +231,19 @@ def complex_batchnorm(x, x_complex=None):
     Outputs:
         result - Resulting feature after batch normalization. [B, C, W, H]
     """
-
-    ###BATCH size x Dim x Dim x Dim
-
-    norm_x = x_complex if x_complex is not None else x
     
-    denominator = norm_x.view(norm_x.shape[0],-1)
-    denominator = complex_norm(denominator)**2
-    denominator = denominator.mean(dim=1)
-    denominator = torch.sqrt(denominator)
-    denominator = denominator.view(denominator.shape[0],1,1,1)
+    denominator_real = x_real.view(x_real.shape[0], -1)
+    denominator_imag = x_imag.view(x_imag.shape[0], -1)
+    denominator_real = complex_norm(denominator_real, denominator_imag)**2
+    denominator_imag = complex_norm(denominator_imag, denominator_imag)**2
+    denominator_real = denominator_real.mean(dim=1)
+    denominator_imag = denominator_imag.mean(dim=1)
+    denominator_real = torch.sqrt(denominator_real)
+    denominator_imag = torch.sqrt(denominator_imag)
+    denominator_real = denominator_real.view(denominator_real.shape[0],1,1,1)
+    denominator_imag = denominator_imag.view(denominator_imag.shape[0],1,1,1)
 
-    result = x/denominator
-
-
-    #print(result.shape)
+    result_real = x_real/denominator_real
+    result_imag = x_imag/denominator_imag
 
     return result
-
-
-    ### Deler = BATCH_size x 1 
-
-    ### output =  ###BATCH size x Dim x Dim x Dim
