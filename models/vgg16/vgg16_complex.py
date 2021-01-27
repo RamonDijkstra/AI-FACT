@@ -112,7 +112,7 @@ class Complex_VGG16(pl.LightningModule):
 
         self.encoder_layers = self.input_net
         #number depended on dataset
-        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, (50176), self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
         self.softmax = nn.Softmax()
@@ -156,6 +156,7 @@ class Complex_VGG16(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
+
 
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
@@ -443,7 +444,6 @@ class VGG16Decoder(nn.Module):
         # initialize the softmax layer
         self.num_classes = num_classes
         
-        # self.fc1 = nn.Linear(16384, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
@@ -475,6 +475,7 @@ class VGG16Decoder(nn.Module):
         decoded_batch = encoded_batch.real
 
         decoded_batch = decoded_batch.reshape(decoded_batch.shape[0], -1)
+
 
         self.fc1 = nn.Linear(decoded_batch.shape[1], 4096).to(self.device)
 
