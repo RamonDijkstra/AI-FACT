@@ -143,12 +143,6 @@ class VGG16(pl.LightningModule):
         # #Linear layer
         # self.linear_layer = nn.Linear(512, self.num_classes)
 
-        #Linear layers from original papers
-
-        self.fc1 = nn.Linear(512, 4096)
-        self.fc2 = nn.Linear(4096, 4096)
-        self.fc3 = nn.Linear(4096, self.num_classes)
-
         self.encoder_layers = nn.Sequential(
             conv0, preact1_ReLU, preact1_conv, conv1, maxpool1, preact2a_ReLU, preact2a_conv,
             preact2b_ReLU, preact2b_conv, conv2, maxpool2, preact3a_ReLU, preact3a_conv, preact3b_ReLU,
@@ -161,6 +155,11 @@ class VGG16(pl.LightningModule):
             preact5a_ReLU, preact5a_conv, preact5b_batch, preact5b_ReLU, preact5b_conv, preact5c_batch, preact5c_ReLU, preact5c_conv,
             maxpool5, last_batch_layer, last_ReLU_layer
         )
+
+        #Linear layers from original papers
+        self.fc1 = nn.Linear(512, 4096)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.fc3 = nn.Linear(4096, self.num_classes)
         
         self.softmax = nn.Softmax(dim=1)
 
