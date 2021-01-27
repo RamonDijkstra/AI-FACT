@@ -160,17 +160,17 @@ class Complex_VGG16(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
 
         # log the train accuracy
-        out = self.softmax(result)
+        result = self.softmax(out)
         preds = out.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('train_acc', acc)
         
         # return the decoded feature, discriminator predictions and real labels
         # return x, discriminator_predictions, labels
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
 
         # log the loss
@@ -213,14 +213,14 @@ class Complex_VGG16(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing unit
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
         
         # log the validation accuracy
@@ -260,14 +260,17 @@ class Complex_VGG16(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing unit
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        
-        # log the test accuracy
+
+        loss = self.loss_fn(out, labels)
+
+      # log the test loss and accuracy
+        self.log("test_loss", loss)
         self.log('test_acc', acc)
 
 class VGG16ProcessingModule(nn.Module):

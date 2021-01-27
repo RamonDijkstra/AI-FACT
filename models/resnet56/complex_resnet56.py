@@ -134,15 +134,15 @@ class ComplexResNet56(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing module
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
 
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         
         # calculate the model loss 
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
 
         # log the training loss and accuracy
@@ -177,15 +177,15 @@ class ComplexResNet56(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing module
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
         # calculate the loss
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
         
         # log the validation loss and accuracy
@@ -220,15 +220,15 @@ class ComplexResNet56(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing unit
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         
         # calculate the loss
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
         
         # log the test loss and accuracy

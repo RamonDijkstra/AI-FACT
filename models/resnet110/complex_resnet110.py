@@ -128,22 +128,16 @@ class ComplexResNet110(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # # decode the feature from
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
 
         #print(result.shape)
 
         # Log the train accuracy
-        out = self.softmax(result)
+        result = self.softmax(out)
         preds = out.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
-        self.log('train_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
-        
-        # return the decoded feature, discriminator predictions and real labels
-        # return x, discriminator_predictions, labels
-        #print(result.shape)
-        #print(labels.shape)
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         
         loss = gan_loss + model_loss
 
@@ -151,7 +145,45 @@ class ComplexResNet110(pl.LightningModule):
         self.log("generator/loss", gan_loss)
         self.log("model/loss", model_loss)
         self.log("total/loss", loss)
+        self.log('train_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
 
+        return loss
+
+    def validation_step(self, batch, optimizer_idx):
+        """
+        Validation step of the standard ResNet-56 model.
+        
+        Inputs:
+            batch - Input batch of images. Shape: [B, C, W, H]
+                B - batch size
+                C - channels per image
+                W- image width
+                H - image height
+        Outputs:
+            loss - Tensor representing the model loss.
+        """
+        
+        # divide the batch in images and labels
+        x, labels = batch
+        
+        # run the image batch through the network
+        gan_loss, out, thetas = self.encoder(x, False)
+        
+        out = self.proccessing_module(out)
+
+        out = self.decoder(out, thetas)
+        
+        # log the validation accuracy
+        preds = self.softmax(out)
+        preds = preds.argmax(dim=-1)
+        acc = (labels == preds).float().mean()
+        self.log('val_acc', acc)
+        
+        # log the validation loss
+        loss = self.loss_fn(out, labels)
+        self.log("val_loss", loss)
+
+        # return the loss
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -164,11 +196,14 @@ class ComplexResNet110(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from
-        result = self.decoder(out, thetas)
-        result = self.softmax(result)
+        out = self.decoder(out, thetas)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
+        loss = self.loss_fn(out, labels)
+
+        self.log("test_loss", loss)
         self.log('test_acc', acc) # By default logs it per epoch (weighted average over batches), and returns it afterwards
 
 

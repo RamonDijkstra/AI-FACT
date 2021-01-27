@@ -94,16 +94,16 @@ class ResNet56(pl.LightningModule):
         x, labels = batch
 
         # run the image batch through the network
-        result = self.model_layers(x)
+        out = self.model_layers(x)
         
         # log the training accuracy
-        preds = self.softmax(result)
+        preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('train_acc', acc)
         
         # log the training loss
-        loss = self.loss_fn(result, labels)
+        loss = self.loss_fn(out, labels)
         self.log("train_loss", loss)
 
         # return the loss
@@ -127,16 +127,16 @@ class ResNet56(pl.LightningModule):
         x, labels = batch
         
         # run the image batch through the network
-        result = self.model_layers(x)
+        out = self.model_layers(x)
 
         # log the validation accuracy
-        preds = self.softmax(result)
+        preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('val_acc', acc)
         
         # log the validation loss
-        loss = self.loss_fn(result, labels)
+        loss = self.loss_fn(out, labels)
         self.log("val_loss", loss)
 
         # return the loss
@@ -160,16 +160,16 @@ class ResNet56(pl.LightningModule):
         x, labels = batch
 
         # run the image batch through the network
-        result = self.model_layers(x)
+        out = self.model_layers(x)
         
         # log the test accuracy
-        preds = self.softmax(result)
+        preds = self.softmax(out)
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('test_acc', acc)
         
         # log the test loss
-        loss = self.loss_fn(result, labels)
+        loss = self.loss_fn(out, labels)
         self.log("test_loss", loss)
 
         # return the loss

@@ -108,15 +108,15 @@ class ComplexLeNet(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing module
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
 		
 		# calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         
         # calculate the model loss 
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
 
         # log the training loss and accuracy
@@ -156,15 +156,15 @@ class ComplexLeNet(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing module
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
 
 		# calculate the loss
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
         
         # log the validation loss and accuracy
@@ -204,15 +204,15 @@ class ComplexLeNet(pl.LightningModule):
         out = self.proccessing_module(out)
         
         # decode the feature from the processing unit
-        result = self.decoder(out, thetas)
+        out = self.decoder(out, thetas)
         
         # calculate the predictions
-        result = self.softmax(result)
+        result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         
         # calculate the loss
-        model_loss = self.loss_fn(result, labels)
+        model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
         
         # log the test loss and accuracy
@@ -271,7 +271,6 @@ class LenetProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
-        # intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)        
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
@@ -317,9 +316,6 @@ class LenetDecoder(nn.Module):
         # save the inputs
         self.num_classes = num_classes
 
-        # initialize the softmax layer
-        self.softmax = nn.Softmax(dim=1)
-
 
     def forward(self, encoded_batch, thetas):
         """
@@ -341,11 +337,11 @@ class LenetDecoder(nn.Module):
         """
 
     	# rotate the features back to their original state
-        decoded_batch = encoded_batch * torch.exp(-1j * thetas)
+        decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
         
         # get rid of the imaginary part of the complex features
         # decoded_batch = decoded_batch.real
-        decoded_batch = encoded_batch.real
+        decoded_batch = decoded_batch.real
         
         # return the decoded batch
         return decoded_batch
