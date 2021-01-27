@@ -268,22 +268,22 @@ class LenetProcessingModule(nn.Module):
         encoded_batch_imag = encoded_batch.imag
 
 		# pass the encoded feature through the layers
-        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, self.device), complex_relu(encoded_batch_imag, self.device)
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = complex_relu(encoded_batch_real, encoded_batch_imag, self.device)
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         # intermediate_real, intermediate_imag = complex_conv(encoded_batch_real, encoded_batch_imag, self.conv2_real, self.conv2_imag)
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)        
-        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, self.pool), complex_max_pool(intermediate_imag, self.pool)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)        
+        intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
         # intermediate_real, intermediate_imag =  intermediate_real.view(-1, 9216), intermediate_imag.view(-1, 9216)
 
         intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)    
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)    
 
         intermediate_real, intermediate_imag = self.fc2(intermediate_real), self.fc2(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, self.device), complex_relu(intermediate_imag, self.device)
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
 
