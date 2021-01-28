@@ -121,12 +121,18 @@ def train_model(args):
             hparams_file=gan_hparams_file
         )
         generator = gan_model.encoder.generator
+        conv = gan_model.encoder.generator.encoding_layer
+        print("HOI")
     else:
         generator = None
 
-    model = UNet(generator=generator, num_classes=num_classes, lr= args.lr)
 
+    model = UNet(generator=generator, num_classes=num_classes, lr= args.lr, encoding_layer=conv)
 
+    model.gan = generator
+    model.change_channels = generator.encoding_layer
+
+    #print(model)
     if args.load_dict is not None:
         print('Loading model..')
         model_dir = args.load_dict
@@ -134,17 +140,21 @@ def train_model(args):
         last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
         checkpoint_path = checkpoint_dir + last_ckpt
         hparams_file = model_dir + "\hparams.yaml"
+
+        print(model)
         model = model.load_from_checkpoint(
             checkpoint_path=checkpoint_path,
             hparams_file=hparams_file
         )
         print('Model successfully loaded')
         print("Started testing...")
-        model.gan = generator
+
         trainer.test(model=model, test_dataloaders=testloader)
 
     else:
         # train the model
+        print("Started training...")
+        print(model)
         trainer.fit(model, trainloader, valloader)
     # save the model    
 

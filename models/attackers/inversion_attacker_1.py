@@ -53,7 +53,7 @@ class Block(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, chs=(3,64,128,256,512,1024)):
+    def __init__(self, chs=(6,64,128,256,512,1024)):
         super().__init__()
         self.enc_blocks = nn.ModuleList([Block(chs[i], chs[i+1]) for i in range(len(chs)-1)])
         self.pool = nn.MaxPool2d(2)
@@ -89,7 +89,7 @@ class Decoder(nn.Module):
 
 
 class UNet(pl.LightningModule):
-    def __init__(self, generator=None, enc_chs=(3,64,128,256,512), dec_chs=(512, 256, 128, 64), num_classes=3, retain_dim=True, out_sz=(32,32), training=True, lr=3e-4):
+    def __init__(self, generator, encoding_layer, enc_chs=(6,64,128,256,512), dec_chs=(512, 256, 128, 64), num_classes=3, retain_dim=True, out_sz=(32,32), training=True, lr=3e-4):
         super().__init__()
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -97,6 +97,16 @@ class UNet(pl.LightningModule):
         self.upsample = nn.Upsample(size=(32,32))
 
         self.gan = generator
+        print("SDKJHFSKLJFDLKSJ")
+        print(self.gan)
+        if self.gan is not None:
+            self.gan.requires_grad = False
+        self.change_channels = encoding_layer
+        if self.change_channels is not None:
+            self.change_channels.requires_grad = False
+        #print(self.gan)
+        #print(self.gan.encoding_layer)
+        #print("sdflkjsdklfgjdfklgj")
 
         self.encoder = Encoder(enc_chs)
         self.decoder = Decoder(dec_chs)
@@ -105,6 +115,8 @@ class UNet(pl.LightningModule):
         self.retain_dim = retain_dim
         self.loss_fn = nn.MSELoss(reduction='mean')
         self.lr = lr
+        
+
 
     def configure_optimizers(self):
         """
@@ -139,10 +151,14 @@ class UNet(pl.LightningModule):
 
         x, _ = batch
 
+        with torch.no_grad():
+            x2 = self.change_channels(x)
+
+
        # print(torch.max(x),torch.min(x))
 
 
-        enc_ftrs = self.encoder(x)
+        enc_ftrs = self.encoder(x2)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:
@@ -156,8 +172,11 @@ class UNet(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, _ = batch
 
+        with torch.no_grad():
+            x2 = self.change_channels(x)
 
-        enc_ftrs = self.encoder(x)
+
+        enc_ftrs = self.encoder(x2)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:
@@ -172,9 +191,11 @@ class UNet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, _ = batch
 
-       
-        #_, encoded_x, thetas, _, _ = self.gan(x)
-        encoded_x = self.gan.encoding_layer(x)
+        #with torch.no_grad():
+       #     x2 = self.change_channels(x)
+
+        _, encoded_x, thetas, _, _ = self.gan(x)
+        #encoded_x = self.gan.generator(x)
 
 
         hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
