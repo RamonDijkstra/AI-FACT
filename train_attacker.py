@@ -32,14 +32,12 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from models.attackers.inversion_attacker_1 import *
 # from models.attackers.inversion_attacker_2 import *
 from models.lenet.complex_lenet import *
-from models.alexnet.complex_alexnet import *
-from models.resnet56.complex_resnet56 import *
-from models.resnet110.complex_resnet110 import *
+from models.resnet.complex_resnet import *
+from models.resnet.complex_resnet import *
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
-from dataloaders.celeba_loader import load_data as load_celeba_data
 
 from os import listdir
 from os.path import isfile, join
@@ -47,9 +45,8 @@ from os.path import isfile, join
 # initialize our model dictionary
 gan_model_dict = {}
 gan_model_dict['Complex_LeNet'] = ComplexLeNet
-gan_model_dict['Complex_AlexNet'] = ComplexAlexNet
-gan_model_dict['Complex_ResNet-56'] = ComplexResNet56
-gan_model_dict['Complex_ResNet-110'] = ComplexResNet110
+gan_model_dict['Complex_ResNet-56'] = ComplexResNet
+gan_model_dict['Complex_ResNet-110'] = ComplexResNet
 
 # initialize our model dictionary
 model_dict = {}
@@ -60,7 +57,6 @@ model_dict['UNet'] = UNet
 dataset_dict = {}
 dataset_dict['CIFAR-10'] = load_cifar10_data
 dataset_dict['CIFAR-100'] = load_cifar100_data
-dataset_dict['CelebA'] = load_celeba_data
 
 def train_model(args):
     """

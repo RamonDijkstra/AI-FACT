@@ -172,22 +172,23 @@ class UNet(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, _ = batch
 
-        #with torch.no_grad():
-            #encoded_x, thetas = self.gan(x, training=False)
-            #encoded_x = self.gan.encoding_layer(x)
+       
+        #_, encoded_x, thetas, _, _ = self.gan(x)
+        encoded_x = self.gan.encoding_layer(x)
 
 
-        #hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
-        #encoded_x = hoi(encoded_x)
-        #encoded_x = self.upsample(encoded_x)
+        hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
+        encoded_x = hoi(encoded_x)
+        encoded_x = self.upsample(encoded_x)
 
-        enc_ftrs = self.encoder(x)
+        enc_ftrs = self.encoder(encoded_x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:
             out = F.interpolate(out, self.out_sz)
 
         loss = self.loss_fn(out, x)
+
         self.log("total/reconstruction_error", loss)
         
         return loss
