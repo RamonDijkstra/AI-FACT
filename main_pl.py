@@ -107,26 +107,24 @@ def train_model(args):
         args.dataset, args.batch_size, args.num_workers
     )
 
+    checkpoint_callback = ModelCheckpoint(monitor='val_acc',
+                            mode='max',
+                            save_top_k=1,
+                            save_weights_only=True)
+
     # check whether to use early stopping
     if args.no_early_stopping:
         # initialize the Lightning trainer
+
         trainer = pl.Trainer(default_root_dir=args.log_dir,
-                        checkpoint_callback=ModelCheckpoint(
-                            monitor='val_acc',
-                            mode='max',
-                            save_top_k=1,
-                            save_weights_only=True),
+                        checkpoint_callback=checkpoint_callback,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
     else:
         # initialize the Lightning trainer
         trainer = pl.Trainer(default_root_dir=args.log_dir,
-                        checkpoint_callback=ModelCheckpoint(
-                            monitor='val_acc',
-                            mode='max',
-                            save_top_k=1,
-                            save_weights_only=True),
+                        checkpoint_callback=checkpoint_callback,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
@@ -144,20 +142,17 @@ def train_model(args):
     if args.load_dir:
         # load the saved model
         print('Loading model..')
-        model_dir = args.load_dir
-        checkpoint_dir = model_dir + "\checkpoints\\"
-        last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
-        checkpoint_path = checkpoint_dir + last_ckpt
-        hparams_file = model_dir + "\hparams.yml"
-        model = model.load_from_checkpoint(
-            checkpoint_path=checkpoint_path,
-            hparams_file=hparams_file
-        )
+        model.load_state_dict(torch.load('/saved_models/ResNet-56_sav'))
         print('Model successfully loaded')
     else:
         # train the model
         print('Training model..')
         trainer.fit(model, trainloader, valloader)
+        model = model.load_from_checkpoint(
+            checkpoint_path=checkpoint_callback.best_model_path,
+        )
+        
+        torch.save(model.state_dict(), str(args.model)+'_sav')
         print('Training successfull')
 
     # test the model
