@@ -40,7 +40,7 @@ from models.lenet.complex_lenet import *
 from models.resnet.resnet import *
 from models.resnet.complex_resnet import *
 from models.vgg16.vgg16 import *
-from models.vgg16.vgg16_complex import *
+from models.vgg16.complex_vgg16 import *
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
@@ -56,7 +56,7 @@ model_dict['ResNet-56'] = ResNet
 model_dict['Complex_ResNet-56'] = ComplexResNet
 model_dict['Complex_ResNet-110'] = ComplexResNet
 model_dict['VGG-16'] = VGG16
-model_dict['Complex_VGG-16'] = Complex_VGG16
+model_dict['Complex_VGG-16'] = ComplexVGG16 
 
 # initialize our dataset dictionary
 dataset_dict = {}

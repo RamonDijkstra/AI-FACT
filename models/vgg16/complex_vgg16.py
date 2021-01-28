@@ -33,7 +33,7 @@ from complex_functions import *
 # import encoder GAN model
 from models.encoder.GAN import EncoderGAN
 
-class Complex_VGG16(pl.LightningModule):
+class ComplexVGG16(pl.LightningModule):
     """
 	Complex VGG-16 model
 	"""
@@ -48,7 +48,7 @@ class Complex_VGG16(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(Complex_VGG16, self).__init__()
+        super(ComplexVGG16, self).__init__()
         self.save_hyperparameters()
 
         # save the inputs
@@ -112,7 +112,7 @@ class Complex_VGG16(pl.LightningModule):
         self.encoder = EncoderGAN(self.encoder_layers, 50176, self.k, self.lr)
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
