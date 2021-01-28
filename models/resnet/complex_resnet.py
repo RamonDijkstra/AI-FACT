@@ -196,7 +196,7 @@ class ComplexResNet(pl.LightningModule):
         # return the loss
         return loss
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, optimizer_idx):
         """
         Test step of the complex ResNet model.
 
