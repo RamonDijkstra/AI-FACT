@@ -112,10 +112,10 @@ class Complex_VGG16(pl.LightningModule):
 
         self.encoder_layers = self.input_net
         #When using CIFAR-10 dataset:
-        self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
+        #self.encoder = EncoderGAN(self.input_net, (256*8*8), self.k, self.lr)
 
         #When using CUB-200 dataset:
-        # self.encoder = EncoderGAN(self.input_net, 50176, self.k, self.lr)
+        self.encoder = EncoderGAN(self.input_net, 50176, self.k, self.lr)
 
         self.proccessing_module = VGG16ProcessingModule(self.num_classes)
         self.decoder = VGG16Decoder(self.num_classes)
@@ -447,10 +447,10 @@ class VGG16Decoder(nn.Module):
         self.num_classes = num_classes
 
         # When using CUB200:
-        # self.fc1 = nn.Linear(2048, 4096)
+        self.fc1 = nn.Linear(2048, 4096)
 
         # When using CIFAR10:
-        self.fc1 = nn.Linear(512, 4096)
+        #self.fc1 = nn.Linear(512, 4096)
 
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
