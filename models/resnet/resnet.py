@@ -26,7 +26,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 class ResNet(pl.LightningModule):
     """
