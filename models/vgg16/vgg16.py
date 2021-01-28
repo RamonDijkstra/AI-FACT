@@ -23,7 +23,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 class VGG16(pl.LightningModule):
     """
@@ -31,7 +30,6 @@ class VGG16(pl.LightningModule):
     """
 
     def __init__(self, num_classes=10, k=2, lr=3e-4):
-    # def __init__(self, n_channels, n_classes):
         """
         Standard VGG-16 network.
 

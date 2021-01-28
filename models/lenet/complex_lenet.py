@@ -26,7 +26,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 # import complex functions
 from complex_functions import *
@@ -59,10 +58,10 @@ class ComplexLeNet(pl.LightningModule):
 
         # initialize the different modules of the network
         self.encoder_layers = nn.Conv2d(3, 6, 5)
-        self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
+        self.encoder = EncoderGAN(self.encoder_layers, (6*28*28), self.k, self.lr)
         self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
@@ -92,6 +91,8 @@ class ComplexLeNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -138,6 +139,8 @@ class ComplexLeNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -183,7 +186,9 @@ class ComplexLeNet(pl.LightningModule):
             optimizer_idx - Int indicating the index of the current optimizer
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
-                2 - Full model optimize
+                2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels

@@ -114,6 +114,8 @@ class ComplexResNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -160,6 +162,8 @@ class ComplexResNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -206,6 +210,8 @@ class ComplexResNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels

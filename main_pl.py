@@ -148,11 +148,14 @@ def train_model(args):
         # train the model
         print('Training model..')
         trainer.fit(model, trainloader, valloader)
+
+        # load the best epoch
         model = model.load_from_checkpoint(
             checkpoint_path=checkpoint_callback.best_model_path,
         )
-        
-        torch.save(model.state_dict(), str(args.model)+'_sav')
+
+        # save the model
+        torch.save(model.state_dict(), './saved_models/'+str(args.model)+'_save')
         print('Training successfull')
 
     # test the model
