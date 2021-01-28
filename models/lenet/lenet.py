@@ -114,8 +114,7 @@ class LeNet(pl.LightningModule):
         loss = self.loss_fn(out, labels)
 
         # log the training loss and accuracy
-        self.log("train_model_loss", loss)
-        self.log("train_total-loss", loss)
+        self.log("train_loss", loss)
         self.log("train_acc", acc)
 
         # return the loss
@@ -165,8 +164,7 @@ class LeNet(pl.LightningModule):
         loss = self.loss_fn(out, labels)
 
         # log the validation loss and accuracy
-        self.log("val_model_loss", loss)
-        self.log("val_total-loss", loss)
+        self.log("val_loss", loss)
         self.log("val_acc", acc)
 
         # return the loss
@@ -215,7 +213,9 @@ class LeNet(pl.LightningModule):
         # calculate the model loss
         loss = self.loss_fn(out, labels)
 
-        # log the validation loss and accuracy
-        self.log("test_model_loss", loss)
-        self.log("test_total-loss", loss)
+        # log the test loss and accuracy
+        self.log("test_loss", loss)
         self.log("test_acc", acc)
+
+        # return the loss
+        return loss
