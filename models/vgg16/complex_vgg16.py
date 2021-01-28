@@ -38,7 +38,7 @@ class ComplexVGG16(pl.LightningModule):
 	Complex VGG-16 model
 	"""
 
-    def __init__(self, num_classes=10, k=2, lr=3e-4):
+    def __init__(self, num_classes=200, k=2, lr=3e-4):
         """
         Complex VGG-16 network.
 

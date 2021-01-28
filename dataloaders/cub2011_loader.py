@@ -48,7 +48,8 @@ def load_data(batch_size=128, num_workers=0):
     transform = transforms.Compose(
         [transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Resize(size=(56,56))]
+        transforms.CenterCrop((112,112)),
+        transforms.Resize(size=(112,112))]
     )
 
     # create path with images
