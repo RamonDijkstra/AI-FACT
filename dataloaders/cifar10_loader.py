@@ -37,7 +37,7 @@ def load_data(batch_size=128, num_workers=0):
     # normalize the input
     transform = transforms.Compose(
     [transforms.ToTensor(),
-       # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
        ])
 
     # load the training and test dataset

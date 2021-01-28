@@ -26,7 +26,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
 
 # import complex functions
 from complex_functions import *
@@ -58,14 +57,11 @@ class ComplexLeNet(pl.LightningModule):
         self.k = k
 
         # initialize the different modules of the network
-        encoder_conv = nn.Conv2d(3, 6, 5)
-
-        self.encoder_layers = encoder_conv
-        # self.encoder_conv = nn.Conv2d(3, 6, 5)
-        self.encoder = EncoderGAN(encoder_conv, (6*28*28), self.k, self.lr)
+        self.encoder_layers = nn.Conv2d(3, 6, 5)
+        self.encoder = EncoderGAN(self.encoder_layers, (6*28*28), self.k, self.lr)
         self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
@@ -95,6 +91,8 @@ class ComplexLeNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -102,9 +100,6 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, optimizer_idx)
-
-        #Terugrotatie mafklapper
-        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
 
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
@@ -127,6 +122,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("train_total-loss", loss)
         self.log("train_acc", acc)
 
+        # return the loss
         return loss
 
     def validation_step(self, batch, optimizer_idx):
@@ -143,6 +139,8 @@ class ComplexLeNet(pl.LightningModule):
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -150,9 +148,6 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-
-        #Terugrotatie mafklapper
-        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
 
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
@@ -175,6 +170,7 @@ class ComplexLeNet(pl.LightningModule):
         self.log("val_total-loss", loss)
         self.log("val_acc", acc)
 
+        # return the loss
         return loss
 
     def test_step(self, batch, optimizer_idx):
@@ -190,7 +186,9 @@ class ComplexLeNet(pl.LightningModule):
             optimizer_idx - Int indicating the index of the current optimizer
                 0 - GAN generator optimizer
                 1 - GAN discriminator optimizer
-                2 - Full model optimize
+                2 - Full model optimizer
+        Outputs:
+			loss - Tensor representing the model loss.
         """
 
         # divide the batch in images and labels
@@ -198,9 +196,6 @@ class ComplexLeNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-
-        #Terugrotatie mafklapper
-        # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
 
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
@@ -223,6 +218,9 @@ class ComplexLeNet(pl.LightningModule):
         self.log("test_total-loss", loss)
         self.log("test_acc", acc)
 
+        # return the loss
+        return loss
+
 class LenetProcessingModule(nn.Module):
     """
 	LeNet processing module model
@@ -243,7 +241,6 @@ class LenetProcessingModule(nn.Module):
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
         self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        # self.fc1 = nn.Linear(9216, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_classes)
 
@@ -278,7 +275,6 @@ class LenetProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
-        # intermediate_real, intermediate_imag =  intermediate_real.view(-1, 9216), intermediate_imag.view(-1, 9216)
 
         intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
@@ -289,10 +285,10 @@ class LenetProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)
 
 		# recombine the real and imaginary parts into a complex feature
-        x = torch.complex(intermediate_real, intermediate_imag)
+        processed_batch = torch.complex(intermediate_real, intermediate_imag)
 
 		# return the processed complex features
-        return x
+        return processed_batch
 
     @property
     def device(self):
@@ -341,8 +337,7 @@ class LenetDecoder(nn.Module):
     	# rotate the features back to their original state
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
 
-        # get rid of the imaginary part of the complex features
-        # decoded_batch = decoded_batch.real
+        # get the real part of the complex features
         decoded_batch = decoded_batch.real
 
         # return the decoded batch
