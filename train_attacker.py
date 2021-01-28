@@ -84,12 +84,14 @@ def train_model(args):
         verbose=True,
         mode='min'
     )
+    checkpoint_callback = ModelCheckpoint(monitor='val/loss',
+                            mode='max',
+                            save_top_k=1,
+                            save_weights_only=True)
 
     # initialize the Lightning trainer
     trainer = pl.Trainer(default_root_dir=args.log_dir,
-                        checkpoint_callback=ModelCheckpoint(
-                            save_weights_only=True
-                        ),
+                        checkpoint_callback=checkpoint_callback,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
@@ -110,59 +112,35 @@ def train_model(args):
                 "check the TensorBoard file at " + trainer.logger.log_dir + ". If you " + \
                 "want to see the progress bar, use the argparse option \"progress_bar\".\n")
 
-        gan_model = initialize_gan_model(args.gan_model, num_classes, args.lr, args.k)
-        gan_model_dir = args.load_gan
-        gan_checkpoint_dir = gan_model_dir + "\checkpoints\\"
-        gan_last_ckpt = [f for f in listdir(gan_checkpoint_dir) if isfile(join(gan_checkpoint_dir, f))][-1:][0]
-        gan_checkpoint_path = gan_checkpoint_dir + gan_last_ckpt
-        gan_hparams_file = gan_model_dir + "\hparams.yaml"
-        gan_model = gan_model.load_from_checkpoint(
-            checkpoint_path=gan_checkpoint_path,
-            hparams_file=gan_hparams_file
-        )
+        gan_model = initialize_gan_model(args.gan_model, 10, args.lr, args.k)
+        gan_model.load_state_dict(torch.load('./saved_models/Complex_LeNet_save'))
         generator = gan_model.encoder.generator
         conv = gan_model.encoder.generator.encoding_layer
-        print("HOI")
     else:
         generator = None
 
 
     model = UNet(generator=generator, num_classes=num_classes, lr= args.lr, encoding_layer=conv)
 
-    model.gan = generator
-    model.change_channels = generator.encoding_layer
+    #model.gan = generator
+    #model.change_channels = generator.encoding_layer
 
     #print(model)
-    if args.load_dict is not None:
-        print('Loading model..')
-        model_dir = args.load_dict
-        checkpoint_dir = model_dir + "\checkpoints\\"
-        last_ckpt = [f for f in listdir(checkpoint_dir) if isfile(join(checkpoint_dir, f))][-1:][0]
-        checkpoint_path = checkpoint_dir + last_ckpt
-        hparams_file = model_dir + "\hparams.yaml"
-
-        print(model)
-        model = model.load_from_checkpoint(
-            checkpoint_path=checkpoint_path,
-            hparams_file=hparams_file
-        )
-        print('Model successfully loaded')
-        print("Started testing...")
-
-        trainer.test(model=model, test_dataloaders=testloader)
-
-    else:
-        # train the model
-        print("Started training...")
-        print(model)
-        trainer.fit(model, trainloader, valloader)
-    # save the model    
-
-
-    # test the model
+    # train the model
+    print("Started training...")
+    #print(model)
+    trainer.fit(model, trainloader, valloader)
+    #torch.save(model.state_dict(), 'Unet_sav')
     
+    print('Training successfull')
 
-    # return the model
+    print(model)
+    print("Started testing...")
+    trainer.test(model=model, test_dataloaders=testloader)
+
+    model.load_state_dict(torch.load('./saved_attackers/LeNet_sav'))
+
+
     return model
 
 def initialize_gan_model(model='Complex_LeNet', num_classes=3, lr=3e-4, k=2):
