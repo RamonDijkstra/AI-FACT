@@ -10,7 +10,7 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to conditions.
 #
-# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte 
+# Authors: Luuk Kaandorp, Ward Pennink, Ramon Dijkstra, Reinier Bekkenutte
 # Date Created: 2020-01-08
 ###############################################################################
 
@@ -28,8 +28,8 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-# import utility functions (all complex functions)
-from utils import *
+# import complex functions
+from complex_functions import *
 
 # import encoder GAN model
 from models.encoder.GAN import EncoderGAN
@@ -49,7 +49,7 @@ class ComplexLeNet(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 3e-4
         """
-        super(ComplexLeNet, self).__init__()       
+        super(ComplexLeNet, self).__init__()
         self.save_hyperparameters()
 
         # save the inputs
@@ -66,7 +66,7 @@ class ComplexLeNet(pl.LightningModule):
         self.proccessing_module = LenetProcessingModule(self.num_classes)
         self.decoder = LenetDecoder(self.num_classes)
         self.softmax = nn.Softmax()
-        
+
         # initialize the loss function
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -74,17 +74,17 @@ class ComplexLeNet(pl.LightningModule):
         """
         Function to configure the optimizers
         """
-        
+
         # initialize optimizer for the entire model
         model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        
+
         # return the optimizer
         return model_optimizer
 
     def training_step(self, batch, optimizer_idx):
         """
         Training step of the complex LeNet model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -96,7 +96,7 @@ class ComplexLeNet(pl.LightningModule):
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
@@ -108,16 +108,16 @@ class ComplexLeNet(pl.LightningModule):
 
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
-        
+
         # decode the feature from the processing module
         out = self.decoder(out, thetas)
-		
+
 		# calculate the predictions
         result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        
-        # calculate the model loss 
+
+        # calculate the model loss
         model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
 
@@ -128,11 +128,11 @@ class ComplexLeNet(pl.LightningModule):
         self.log("train_acc", acc)
 
         return loss
-        
+
     def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the complex LeNet model.
-        
+
         Inputs:
             image_batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -144,7 +144,7 @@ class ComplexLeNet(pl.LightningModule):
                 1 - GAN discriminator optimizer
                 2 - Full model optimizer
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
@@ -156,10 +156,10 @@ class ComplexLeNet(pl.LightningModule):
 
         # send the encoded feature to the processing module
         out = self.proccessing_module(out)
-        
+
         # decode the feature from the processing module
         out = self.decoder(out, thetas)
-        
+
         # calculate the predictions
         result = self.softmax(out)
         preds = result.argmax(dim=-1)
@@ -168,7 +168,7 @@ class ComplexLeNet(pl.LightningModule):
 		# calculate the loss
         model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
-        
+
         # log the validation loss and accuracy
         self.log("val_generator_loss", gan_loss)
         self.log("val_model_loss", model_loss)
@@ -180,7 +180,7 @@ class ComplexLeNet(pl.LightningModule):
     def test_step(self, batch, optimizer_idx):
         """
         Test step of the complex LeNet model.
-        
+
         Inputs:
             image_batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -192,7 +192,7 @@ class ComplexLeNet(pl.LightningModule):
                 1 - GAN discriminator optimizer
                 2 - Full model optimize
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
 
@@ -201,22 +201,22 @@ class ComplexLeNet(pl.LightningModule):
 
         #Terugrotatie mafklapper
         # out = out * torch.exp(-1j * thetas.squeeze())[:, None, None, None]
-        
+
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
-        
+
         # decode the feature from the processing unit
         out = self.decoder(out, thetas)
-        
+
         # calculate the predictions
         result = self.softmax(out)
         preds = result.argmax(dim=-1)
         acc = (labels == preds).float().mean()
-        
+
         # calculate the loss
         model_loss = self.loss_fn(out, labels)
         loss = gan_loss + model_loss
-        
+
         # log the test loss and accuracy
         self.log("test_generator_loss", gan_loss)
         self.log("test_model_loss", model_loss)
@@ -227,7 +227,7 @@ class LenetProcessingModule(nn.Module):
     """
 	LeNet processing module model
 	"""
-    
+
     def __init__(self, num_classes=10):
         """
         Processing module of the network
@@ -236,21 +236,21 @@ class LenetProcessingModule(nn.Module):
             num_classes - Number of classes of images. Default = 10
         """
         super(LenetProcessingModule, self).__init__()
-        
+
         # initialize the layers of the LeNet model
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2, return_indices=True)
         self.conv2_real = nn.Conv2d(6, 16, 5, bias=False)
-        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)                 
+        self.conv2_imag = nn.Conv2d(6, 16, 5, bias=False)
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         # self.fc1 = nn.Linear(9216, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_classes)
-    
+
     def forward(self, encoded_batch):
         """
 		Forward pass of the processing module.
-		
+
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -274,26 +274,26 @@ class LenetProcessingModule(nn.Module):
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag = complex_conv(intermediate_real, intermediate_imag, self.conv2_real, self.conv2_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)        
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
         intermediate_real, intermediate_imag = complex_max_pool(intermediate_real, intermediate_imag, self.pool)
 
         intermediate_real, intermediate_imag =  intermediate_real.view(-1, 16 * 5 * 5), intermediate_imag.view(-1, 16 * 5 * 5)
         # intermediate_real, intermediate_imag =  intermediate_real.view(-1, 9216), intermediate_imag.view(-1, 9216)
 
         intermediate_real, intermediate_imag = self.fc1(intermediate_real), self.fc1(intermediate_imag)
-        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)    
+        intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
         intermediate_real, intermediate_imag = self.fc2(intermediate_real), self.fc2(intermediate_imag)
         intermediate_real, intermediate_imag = complex_relu(intermediate_real, intermediate_imag, self.device)
 
-        intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)    
+        intermediate_real, intermediate_imag = self.fc3(intermediate_real), self.fc3(intermediate_imag)
 
 		# recombine the real and imaginary parts into a complex feature
         x = torch.complex(intermediate_real, intermediate_imag)
 
 		# return the processed complex features
         return x
-    
+
     @property
     def device(self):
         """
@@ -305,11 +305,11 @@ class LenetDecoder(nn.Module):
     """
 	LeNet decoder model
 	"""
-    
+
     def __init__(self, num_classes):
         """
         Decoder module of the network
-		
+
 		Inputs:
             num_classes - Number of classes of images. Default = 10
         """
@@ -322,7 +322,7 @@ class LenetDecoder(nn.Module):
     def forward(self, encoded_batch, thetas):
         """
 		Forward pass of the decoder.
-		
+
         Inputs:
             encoded_batch - Input batch of encoded features. Shape: [B, C, W, H]
                 B - batch size
@@ -340,10 +340,10 @@ class LenetDecoder(nn.Module):
 
     	# rotate the features back to their original state
         decoded_batch = encoded_batch * torch.exp(-1j * thetas.squeeze())[:, None]
-        
+
         # get rid of the imaginary part of the complex features
         # decoded_batch = decoded_batch.real
         decoded_batch = decoded_batch.real
-        
+
         # return the decoded batch
         return decoded_batch

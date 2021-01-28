@@ -4,7 +4,7 @@
 
 ## Standard libraries
 import os
-import numpy as np 
+import numpy as np
 import random
 from PIL import Image
 from types import SimpleNamespace
@@ -24,7 +24,9 @@ from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from utils import *
+# import complex functions
+from complex_functions import *
+
 from models.encoder.GAN import EncoderGAN
 
 class ComplexResNet(pl.LightningModule):
@@ -42,7 +44,7 @@ class ComplexResNet(pl.LightningModule):
                 to train the discriminator. Default = 2
             lr - Learning rate to use for the optimizer. Default = 1e-3
         """
-        super(ComplexResNet, self).__init__()       
+        super(ComplexResNet, self).__init__()
         self.save_hyperparameters()
 
         # save the inputs
@@ -81,7 +83,7 @@ class ComplexResNet(pl.LightningModule):
         self.softmax = nn.Softmax()
 
         print("CLASSES", self.num_classes)
-        
+
         # initialize the loss function of the complex LeNet
         self.loss_fn = nn.CrossEntropyLoss()
 
@@ -89,10 +91,10 @@ class ComplexResNet(pl.LightningModule):
         """
         Function to configure the optimizers
         """
-        
+
         # initialize optimizer for the entire model
         model_optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        
+
         # return the optimizer
         return model_optimizer
 
@@ -123,7 +125,7 @@ class ComplexResNet(pl.LightningModule):
 
 
         out = self.proccessing_module(out)
-        
+
         # # decode the feature from
         out = self.decoder(out, thetas)
 
@@ -134,7 +136,7 @@ class ComplexResNet(pl.LightningModule):
         acc = (labels == preds).float().mean()
 
         model_loss = self.loss_fn(out, labels)
-        
+
         loss = gan_loss + model_loss
 
         # log the loss
@@ -148,7 +150,7 @@ class ComplexResNet(pl.LightningModule):
     def validation_step(self, batch, optimizer_idx):
         """
         Validation step of the standard ResNet-56 model.
-        
+
         Inputs:
             batch - Input batch of images. Shape: [B, C, W, H]
                 B - batch size
@@ -158,13 +160,13 @@ class ComplexResNet(pl.LightningModule):
         Outputs:
             loss - Tensor representing the model loss.
         """
-        
+
         # divide the batch in images and labels
         x, labels = batch
-        
+
         # run the image batch through the network
         gan_loss, out, thetas = self.encoder(x, False)
-        
+
         out = self.proccessing_module(out)
 
         out = self.decoder(out, thetas)
@@ -174,7 +176,7 @@ class ComplexResNet(pl.LightningModule):
         preds = preds.argmax(dim=-1)
         acc = (labels == preds).float().mean()
         self.log('val_acc', acc)
-        
+
         # log the validation loss
         loss = self.loss_fn(out, labels)
         self.log("val_loss", loss)
@@ -187,10 +189,10 @@ class ComplexResNet(pl.LightningModule):
 
         # run the image batch through the encoder (generator and discriminator)
         gan_loss, out, thetas = self.encoder(x, False)
-        
+
         # send the encoded feature to the processing unit
         out = self.proccessing_module(out)
-        
+
         # decode the feature from
         out = self.decoder(out, thetas)
         result = self.softmax(out)
@@ -253,9 +255,9 @@ class Resnet_Decoder(nn.Module):
                                     subsample=subsample,
                                     c_out=64)
                     )
-        
+
         self.blocks = nn.Sequential(*blocks)
-        
+
         self.output_net = nn.Sequential(
                 nn.AdaptiveAvgPool2d((1,1)),
                 nn.Flatten(),
@@ -273,10 +275,10 @@ class Resnet_Decoder(nn.Module):
         decoded_batch = self.blocks(decoded_batch)
 
         out = self.output_net(decoded_batch)
-        
 
 
-        
+
+
         return out
 
 
@@ -305,14 +307,14 @@ class ResNetBlock(nn.Module):
             self.Conv2_real = nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False)
             self.Conv2_imag = nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False)
             #nn.BatchNorm2d(c_out)
-            
-        
+
+
             # 1x1 convolution with stride 2 means we take the upper left value, and transform it to new output size
             self.downsample_conv_real = nn.Conv2d(c_in, c_out, kernel_size=1, stride=2, bias=False) if subsample else None
             self.downsample_conv_imag = nn.Conv2d(c_in, c_out, kernel_size=1, stride=2, bias=False) if subsample else None
             #self.downsample = nn.Conv2d(c_in, c_out, kernel_size=1, stride=2) if subsample else None
             #self.act_fn = act_fn
-            
+
 
             #self.act_fn = act_fn
 
@@ -325,13 +327,13 @@ class ResNetBlock(nn.Module):
                 nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False),
                 nn.BatchNorm2d(c_out)
             )
-            
+
             # 1x1 convolution with stride 2 means we take the upper left value, and transform it to new output size
             self.downsample = nn.Conv2d(c_in, c_out, kernel_size=1, stride=2) if subsample else None
             #self.act_fn = act_fn
             self.act_fn = act_fn
 
-        
+
     def forward(self, x):
         if self.complex:
             #print("Ik zit in de forward")
@@ -369,7 +371,7 @@ class ResNetBlock(nn.Module):
 
 
 
-        else:    
+        else:
             z = self.net(x)
             if self.downsample is not None:
                 x = self.downsample(x)
@@ -383,4 +385,3 @@ class ResNetBlock(nn.Module):
         Property function to get the device on which the generator is
         """
         return next(self.parameters()).device
-

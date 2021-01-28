@@ -30,7 +30,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 import numpy as np
 
-from utils import *
+# import complex functions
+from complex_functions import *
+
 from models.encoder.GAN import EncoderGAN
 
 class Complex_VGG16(pl.LightningModule):
