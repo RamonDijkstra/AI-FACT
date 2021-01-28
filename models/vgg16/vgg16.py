@@ -158,9 +158,7 @@ class VGG16(pl.LightningModule):
         )
 
         # linear layers from original paper
-        # self.fc1 = nn.Linear(2048, 4096)
-        # self.fc1 = nn.Linear(25088, 4096)
-        self.fc1 = nn.Linear(8192, 4096)
+        self.fc1 = nn.Linear(2048, 4096)
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, self.num_classes)
 
