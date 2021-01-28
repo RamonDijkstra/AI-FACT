@@ -59,4 +59,5 @@ optional arguments:
 * Reinier Bekkenutte - reinier.bekkenutte@student.uva.nl
 
 ## Acknowledgements
+* Pytorch Lightning implementation and some of the models were developed using information available in the Deep Learning Course of the UvA (https://uvadlc.github.io/). 
 * The U-net implementation for the inversion attack model was adapted from https://github.com/milesial/Pytorch-UNet.
