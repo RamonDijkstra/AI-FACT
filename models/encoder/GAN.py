@@ -297,6 +297,7 @@ class Discriminator(nn.Module):
         # reshape the batch
         encoded_batch = encoded_batch.view(encoded_batch.shape[0], -1).to(self.device)
         
+
         # predict the labels
         predictions = self.linear(encoded_batch)
         predictions = self.sigmoid(predictions)

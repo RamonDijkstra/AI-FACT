@@ -30,7 +30,8 @@ def load_data(batch_size=128, num_workers=2):
 
     transform = transforms.Compose(
     [transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+       # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+       ])
 
     trainset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=True,
                                         download=True, transform=transform)

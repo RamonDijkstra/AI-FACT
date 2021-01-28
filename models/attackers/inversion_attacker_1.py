@@ -97,13 +97,13 @@ class UNet(pl.LightningModule):
         self.upsample = nn.Upsample(size=(32,32))
 
         self.gan = generator
-        # self.input_net = input_net
+
         self.encoder = Encoder(enc_chs)
         self.decoder = Decoder(dec_chs)
         self.out_sz = out_sz
         self.head = nn.Conv2d(dec_chs[-1], num_classes, 1)
         self.retain_dim = retain_dim
-        self.loss_fn = nn.MSELoss(reduction='sum')
+        self.loss_fn = nn.MSELoss(reduction='mean')
         self.lr = lr
 
     def configure_optimizers(self):
@@ -138,7 +138,9 @@ class UNet(pl.LightningModule):
         """
 
         x, _ = batch
-        x = x / 255
+
+       # print(torch.max(x),torch.min(x))
+
 
         enc_ftrs = self.encoder(x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
@@ -153,7 +155,7 @@ class UNet(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, _ = batch
-        x = x / 255
+
 
         enc_ftrs = self.encoder(x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
@@ -169,16 +171,17 @@ class UNet(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, _ = batch
-        print(self.gan)
-        with torch.no_grad():
-            encoded_x, thetas = self.gan(x, training=False)
-        encoded_x = encoded_x / 255
 
-        hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
-        encoded_x = hoi(encoded_x.real)
-        encoded_x = self.upsample(encoded_x)
+        #with torch.no_grad():
+            #encoded_x, thetas = self.gan(x, training=False)
+            #encoded_x = self.gan.encoding_layer(x)
 
-        enc_ftrs = self.encoder(encoded_x)
+
+        #hoi = nn.ConvTranspose2d(6,3,1).to(self.device)
+        #encoded_x = hoi(encoded_x)
+        #encoded_x = self.upsample(encoded_x)
+
+        enc_ftrs = self.encoder(x)
         out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
         out = self.head(out)
         if self.retain_dim:

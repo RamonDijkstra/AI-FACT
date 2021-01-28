@@ -150,10 +150,6 @@ def train_model(args):
     else:
         # train the model
         trainer.fit(model, trainloader, valloader)
-        path = 'saved_models/'
-        allfiles = [f for f in listdir(path) if isfile(join(path, f))]
-        torch.save(model.state_dict(), 'saved_models/inference_attack_model_v' + str(len(allfiles)) + '.pt')
-
     # save the model    
 
 
