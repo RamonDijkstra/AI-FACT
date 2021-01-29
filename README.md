@@ -50,10 +50,10 @@ optional arguments:
   --epochs EPOCHS		Number of epochs used in training. Accepts int values Default is 10.
   --k K				Level of k-anonimity. K-1 fake features are used when training. Accepts int values. Default is 2.
   --log_dir LOG_DIR		Directory for the PyTorch Lightning logs. Accepts string values. Default is 'complex_logs/'.
-	--load_dir LOAD_DIR Directory where the model you want to load is stored. Default is None.
+  --load_dir LOAD_DIR		Directory where the model you want to load is stored. Default is None.
   --progress_bar 		Show a statusbar on the training progress or not. Disabled by default.
   --seed SEED			Seed used for reproducability. Accepts int values. Default is 42.
-	--no_early_stopping 		Disable early stopping using the convergence criteria. Enabled by default.
+  --no_early_stopping 		Disable early stopping using the convergence criteria. Enabled by default.
   --lr LR			Learning rate to use for the model. Accepts int or float values. Default is 3e-4.
 ```
 
