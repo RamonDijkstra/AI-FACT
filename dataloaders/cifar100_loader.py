@@ -15,7 +15,7 @@
 ###############################################################################
 
 """
-Helper function that loads CIFAR-10 data
+Helper function that loads CIFAR-100 data
 """
 
 # pytorch imports
@@ -25,7 +25,7 @@ import torchvision.transforms as transforms
 
 def load_data(batch_size=128, num_workers=0):
     '''
-    Function loads the CIFAR-10 dataset and splits into
+    Function loads the CIFAR-100 dataset and splits into
     train, validation and test sets.
 
     Inputs:
@@ -37,14 +37,13 @@ def load_data(batch_size=128, num_workers=0):
     # normalize the input
     transform = transforms.Compose(
     [transforms.ToTensor(),
-       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-       ])
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     # load the training and test dataset
-    trainset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=True,
+    trainset = torchvision.datasets.CIFAR100(root='./data/cifar100', train=True,
                                         download=True, transform=transform)
-    testset = torchvision.datasets.CIFAR10(root='./data/cifar10', train=False,
-                                        download=True, transform=transform)
+    testset = torchvision.datasets.CIFAR100(root='./data/cifar100', train=False,
+                                       download=True, transform=transform)
 
     # split the test dataset into test and validation
     val_split = int(len(testset)/2)
@@ -53,14 +52,14 @@ def load_data(batch_size=128, num_workers=0):
 
     # create the dataloaders
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
-                                            shuffle=True, num_workers=num_workers)
+                                          shuffle=True, num_workers=num_workers)
     valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size,
                                             shuffle=False, num_workers=num_workers)
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
                                                 shuffle=False, num_workers=num_workers)
 
-    # 10 classes for CIFAR-10
-    num_classes = 10
+    # 100 classes for CIFAR-100
+    num_classes = 100
 
     # return the classes and dataloaders
     return num_classes, trainloader, valloader, testloader
