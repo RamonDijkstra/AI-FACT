@@ -58,16 +58,10 @@ dataset_dict['CIFAR-100'] = load_cifar100_data
 stop_criteria = EarlyStopping(
         monitor='val_loss',
         min_delta=0,
-        patience=10,
+        patience=3,
         verbose=False,
         mode='min'
     )
-
-# initialize checkpoint callback
-checkpoint_callback = ModelCheckpoint(monitor='val_loss',
-                        mode='min',
-                        save_top_k=1,
-                        save_weights_only=True)
 
 def train_model(args):
     """
@@ -105,14 +99,12 @@ def train_model(args):
         # initialize the Lightning trainer
 
         trainer = pl.Trainer(default_root_dir=args.log_dir,
-                        checkpoint_callback=checkpoint_callback,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0)
     else:
         # initialize the Lightning trainer
         trainer = pl.Trainer(default_root_dir=args.log_dir,
-                        checkpoint_callback=checkpoint_callback,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
                         progress_bar_refresh_rate=1 if args.progress_bar else 0,
@@ -133,11 +125,6 @@ def train_model(args):
     # train the model
     print("Started training...")
     trainer.fit(model, trainloader, valloader)
-
-    # load the best epoch
-    model = model.load_from_checkpoint(
-        checkpoint_path=checkpoint_callback.best_model_path,
-    )
 
     # save the model
     os.makedirs('./saved_models', exist_ok=True)

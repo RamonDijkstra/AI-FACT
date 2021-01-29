@@ -143,7 +143,7 @@ def train_model(args):
     if args.load_dir:
         # load the saved model
         print('Loading model..')
-        model.load_state_dict(torch.load('./saved_models/LeNet_sav'))
+        model.load_state_dict(torch.load(args.load_dir))
         print('Model successfully loaded')
     else:
         # train the model
