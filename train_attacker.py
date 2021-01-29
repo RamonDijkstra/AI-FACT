@@ -233,7 +233,7 @@ if __name__ == '__main__':
     parser.add_argument('--k', default=2, type=int,
                         help='Level of anonimity to use during training. k-1 fake features are generated to train the encoder. Default is 2,')
     parser.add_argument('--log_dir', default='attacker_logs/', type=str,
-                        help='Directory where the PyTorch Lightning logs are created. Default is GAN_logs/.')
+                        help='Directory where the PyTorch Lightning logs are created. Default is attacker_logs/.')
     parser.add_argument('--load_gan', default=None, type=str, required=True,
                         help='Directory where the model for the GAN is stored. Is required.')
     parser.add_argument('--progress_bar', action='store_true',
