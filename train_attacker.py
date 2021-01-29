@@ -152,8 +152,12 @@ def initialize_gan_model(model='Complex_LeNet', num_classes=10, lr=3e-4, k=2):
     """
 
     # initialize the model if possible
-    if model in gan_model_dict:
-        return gan_model_dict[model](num_classes=num_classes)
+    if model == "Complex_ResNet-110" or model == "ResNet-110":
+        return model_dict[model](num_classes, k, lr, num_blocks = [37,36,36])
+    elif model == "Complex_ResNet-56" or model == "ResNet-56":
+        return model_dict[model](num_classes, k, lr, num_blocks = [19,18,18])
+    elif model in model_dict:
+        return model_dict[model](num_classes, k, lr)
     # alert the user if the given model does not exist
     else:
         assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(model_dict.keys()))
