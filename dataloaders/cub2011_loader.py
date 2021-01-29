@@ -70,17 +70,21 @@ def load_data(batch_size=128, num_workers=0):
                                        sep=' ', names=['img_id', 'is_training_img'])
 
     # split the dataset into train 50% and test 50%
-    train_indices = train_test_split[train_test_split.is_training_img == 1]
-    test_indices = train_test_split[train_test_split.is_training_img == 0]
-    train_set = torch.utils.data.Subset(data_set, train_indices)
-    test_set = torch.utils.data.Subset(data_set, test_indices)
-
-    # split the test set into validation 50% and test 50%
-    val_split = int(len(test_set)/2)
-    test_split = len(test_set) - val_split
-    val_set, test_set = torch.utils.data.random_split(
-        test_set, [val_split, test_split]
-    )
+    train_set = []
+    test_set = []
+    val_set = []
+    index = 0
+    test = True
+    for item in iter(data_set):
+        if train_test_split.is_training_img[index] == 1:
+            train_set.append(item)
+        else:
+            if test:
+                test_set.append(item)
+            else:
+                val_set.append(item)
+            test = not test
+        index += 1
 
     # create the dataloaders
     trainloader = DataLoader(
