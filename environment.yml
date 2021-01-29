@@ -9,7 +9,7 @@ dependencies:
   - nb_conda=2.2.1
   - pip=20.2.4
   - pytorch=1.7.0
-  - torchvision=0.7.0
+  - torchvision=0.8.0
   - pip:
     - pytorch-lightning==1.0.3
     - torchtext==0.6.0

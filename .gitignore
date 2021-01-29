@@ -8,3 +8,4 @@ complex_logs/
 model_logs/
 attacker_logs/
 saved_models/
+lightning_logs/
