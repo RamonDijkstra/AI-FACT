@@ -56,7 +56,7 @@ model_dict['ResNet-56'] = ResNet
 model_dict['Complex_ResNet-56'] = ComplexResNet
 model_dict['Complex_ResNet-110'] = ComplexResNet
 model_dict['VGG-16'] = VGG16
-model_dict['Complex_VGG-16'] = ComplexVGG16 
+model_dict['Complex_VGG-16'] = ComplexVGG16
 
 # initialize our dataset dictionary
 dataset_dict = {}
@@ -155,6 +155,7 @@ def train_model(args):
         )
 
         # save the model
+        os.makedirs('./saved_models', exist_ok=True)
         torch.save(model.state_dict(), './saved_models/'+str(args.model)+'_save')
         print('Training successfull')
 
