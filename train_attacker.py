@@ -138,7 +138,7 @@ def train_model(args):
     print("Started testing...")
     trainer.test(model=model, test_dataloaders=testloader)
 
-    model.load_state_dict(torch.load('./saved_attackers/LeNet_sav'))
+    torch.save(model.state_dict(), './saved_models/(Complex)LeNetAttacker_save')
 
 
     return model
