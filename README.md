@@ -28,27 +28,32 @@ View the notebook with the experimental results:
 jupyter notebook results.ipynb
 ```
 
-## Running the experiments
-New experiments can be conducted using the *main_pl.py* file. The model and training can be customized by passing command line arguments. The following arguments are supported:
+## Training the models
+Models can be trained using the *main_pl.py* file. The model and training can be customized by passing command line arguments. The following arguments are supported:
 ```bash
 usage: main_pl.py [-h] [--model MODEL] [--dataset DATASET]
 			   [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
 			   [--epochs EPOCHS] [--k K] [--log_dir LOG_DIR]
-			   [--progress_bar] [--seed SEED] [--lr LR]
+			   [--load_dir LOAD_DIR] [--progress_bar] [--seed SEED]
+				 [--no_early_stopping] [--lr LR]
 
 optional arguments:
   -h, --help            	Show help message and exit.
-  --model MODEL			Model to use. Options: ['LeNet', 'ResNet-56']. Default is 'LeNet'.
-  --dataset DATASET		Dataset to use. Only certain combinations with models are allowed. Default is 'CIFAR-10'.
-					LeNet - ['CIFAR-10', 'CIFAR-100']
-					ResNet-56 - ['CIFAR-10', 'CIFAR-100']
+  --model MODEL			Model to use. Options: ['LeNet', 'Complex_LeNet', 'ResNet-56', 'Complex_ResNet-56', 'ResNet-110', 'Complex_ResNet-110', 'VGG-16', 'Complex_VGG-16']. Default is 'Complex_LeNet'.
+  --dataset DATASET		Dataset to use. Only certain combinations with models are working. Default is 'CIFAR-10'.
+					(Complex_)LeNet - ['CIFAR-10', 'CIFAR-100']
+					(Complex_)ResNet-56 - ['CIFAR-10', 'CIFAR-100']
+					(Complex_)ResNet-110 - ['CIFAR-10', 'CIFAR-100']
+					(Complex_)VGG-16 - ['CUB-200']
   --batch_size BATCH_SIZE	Batch size. Accepts int values. Default is 256.
   --num_workers NUM_WORKERS	Number of workers for the dataloader. Accepts int values. Default is 0 (truly deterministic).
   --epochs EPOCHS		Number of epochs used in training. Accepts int values Default is 10.
   --k K				Level of k-anonimity. K-1 fake features are used when training. Accepts int values. Default is 2.
   --log_dir LOG_DIR		Directory for the PyTorch Lightning logs. Accepts string values. Default is 'complex_logs/'.
-  --progress_bar 		Whether to show a statusbar on the training progress or not.
+	--load_dir LOAD_DIR Directory where the model you want to load is stored. Default is None.
+  --progress_bar 		Show a statusbar on the training progress or not. Disabled by default.
   --seed SEED			Seed used for reproducability. Accepts int values. Default is 42.
+	--no_early_stopping 		Disable early stopping using the convergence criteria. Enabled by default.
   --lr LR			Learning rate to use for the model. Accepts int or float values. Default is 3e-4.
 ```
 

@@ -42,17 +42,27 @@ from models.vgg16.complex_vgg16 import *
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
+from dataloaders.cub2011_loader import load_data as load_cub200_data
 
 # initialize our model dictionary
 gan_model_dict = {}
 gan_model_dict['Complex_LeNet'] = ComplexLeNet
 gan_model_dict['Complex_ResNet-56'] = ComplexResNet
 gan_model_dict['Complex_ResNet-110'] = ComplexResNet
+gan_model_dict['Complex_VGG-16'] = ComplexVGG16
 
 # initialize our dataset dictionary
 dataset_dict = {}
 dataset_dict['CIFAR-10'] = load_cifar10_data
 dataset_dict['CIFAR-100'] = load_cifar100_data
+dataset_dict['CUB-200'] = load_cub200_data
+
+# initialize our U-net shape dictionary
+unet_shape_dict = {}
+unet_shape_dict['Complex_LeNet'] = (6,64,128,256,512)
+unet_shape_dict['Complex_ResNet-56'] = (16,64,128,256,512)
+unet_shape_dict['Complex_ResNet-110'] = (16,64,128,256,512)
+unet_shape_dict['Complex_VGG-16'] = (256,64,128,256,512)
 
 # initialize our early stopping criteria
 stop_criteria = EarlyStopping(
@@ -97,7 +107,6 @@ def train_model(args):
     # check whether to use early stopping
     if args.no_early_stopping:
         # initialize the Lightning trainer
-
         trainer = pl.Trainer(default_root_dir=args.log_dir,
                         gpus=1 if torch.cuda.is_available() else 0,
                         max_epochs=args.epochs,
@@ -116,11 +125,12 @@ def train_model(args):
 
     # initialize the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    gan_model = initialize_gan_model(args.gan_model, 10, args.lr, args.k)
+    gan_model = initialize_gan_model(args.gan_model, classes, args.lr, args.k)
     gan_model.load_state_dict(torch.load(args.load_gan))
     generator = gan_model.encoder.generator
     conv = gan_model.encoder.generator.encoding_layer
-    model = UNet(generator=generator, lr= args.lr, encoding_layer=conv)
+    enc_channels = unet_shapes(args.gan_model)
+    model = UNet(generator=generator, enc_chs=enc_channels, lr=args.lr, encoding_layer=conv)
 
     # train the model
     print("Started training...")
@@ -179,6 +189,21 @@ def load_data_fn(dataset='CIFAR-10', batch_size=256, num_workers=0):
     else:
         assert False, "Unknown dataset name \"%s\". Available datasets are: %s" % (dataset, str(dataset_dict.keys()))
 
+def unet_shapes(model='Complex_LeNet'):
+    """
+    Function for selecting the correct unet dimensions for a given model.
+
+    Inputs:
+        model - String indicating the model to use. Default = 'Complex_LeNet'
+    """
+
+    # get the shape if possible
+    if model in unet_shape_dict:
+        return unet_shape_dict[model]
+    # alert the user if the given model does not exist
+    else:
+        assert False, "Unknown model name \"%s\". Available models are: %s" % (model, str(gan_model_dict.keys()))
+
 if __name__ == '__main__':
     """
     Direct calling of the python file via command line.
@@ -191,10 +216,10 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--gan_model', default='Complex_LeNet', type=str,
                         help='What model to use for the GAN. Default is Complex_LeNet.',
-                        choices=['Complex_LeNet', 'Complex_VGG16', 'Complex_ResNet-56','Complex_ResNet-110'])
+                        choices=['Complex_LeNet', 'Complex_VGG-16', 'Complex_ResNet-56','Complex_ResNet-110'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
-                        choices=['CIFAR-10', 'CIFAR-100', 'CelebA'])
+                        choices=['CIFAR-10', 'CIFAR-100', 'CUB-200'])
 
     # dataloader hyperparameters
     parser.add_argument('--batch_size', default=64, type=int,
