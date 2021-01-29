@@ -3,6 +3,18 @@ In the context of the course FACT in AI at the Universiteit van Amsterdam (UvA),
 
 This repository contains a PyTorch Lightning implementation of the experiments from the paper by [Xiang et. al](https://arxiv.org/abs/1901.09546#:~:text=Interpretable%20Complex%2DValued%20Neural%20Networks%20for%20Privacy%20Protection,-Liyao%20Xiang%2C%20Haotian&text=Previous%20studies%20have%20found%20that,without%20too%20much%20accuracy%20degradation.). To run the experiments, please follow the instructions below.
 
+## Content
+Due to time constraints, we were not able to create all models used in the original paper. This repository includes the following:
+
+### Baseline and complex models
+* LeNet
+* ResNet-56-α
+* ResNet-110-α
+* VGG-16
+
+### Attacker models
+* Inversion attacker 2
+
 ## Prerequisites
 * Anaconda. Available at: https://www.anaconda.com/distribution/
 
