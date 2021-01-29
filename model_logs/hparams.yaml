@@ -1,7 +1,0 @@
-k: 2
-lr: 0.0003
-num_blocks:
-- 19
-- 18
-- 18
-num_classes: 100
