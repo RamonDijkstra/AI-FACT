@@ -56,7 +56,7 @@ model_dict['ResNet-56'] = ResNet
 model_dict['Complex_ResNet-56'] = ComplexResNet
 model_dict['Complex_ResNet-110'] = ComplexResNet
 model_dict['VGG-16'] = VGG16
-model_dict['Complex_VGG-16'] = ComplexVGG16 
+model_dict['Complex_VGG-16'] = ComplexVGG16
 
 # initialize our dataset dictionary
 dataset_dict = {}
@@ -72,6 +72,12 @@ stop_criteria = EarlyStopping(
         verbose=False,
         mode='max'
     )
+
+# initialize checkpoint callback
+checkpoint_callback = ModelCheckpoint(monitor='val_acc',
+                        mode='max',
+                        save_top_k=1,
+                        save_weights_only=True)
 
 def train_model(args):
     """
@@ -107,11 +113,6 @@ def train_model(args):
         args.dataset, args.batch_size, args.num_workers
     )
 
-    checkpoint_callback = ModelCheckpoint(monitor='val_acc',
-                            mode='max',
-                            save_top_k=1,
-                            save_weights_only=True)
-
     # check whether to use early stopping
     if args.no_early_stopping:
         # initialize the Lightning trainer
@@ -142,7 +143,7 @@ def train_model(args):
     if args.load_dir:
         # load the saved model
         print('Loading model..')
-        model.load_state_dict(torch.load('./saved_models/LeNet_sav'))
+        model.load_state_dict(torch.load(args.load_dir))
         print('Model successfully loaded')
     else:
         # train the model
@@ -155,6 +156,7 @@ def train_model(args):
         )
 
         # save the model
+        os.makedirs('./saved_models', exist_ok=True)
         torch.save(model.state_dict(), './saved_models/'+str(args.model)+'_save')
         print('Training successfull')
 
