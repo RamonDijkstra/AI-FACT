@@ -19,6 +19,8 @@ Due to time constraints, we were not able to create all models used in the origi
 * Anaconda. Available at: https://www.anaconda.com/distribution/
 
 ## Getting started
+Download the CUB-200 2011 dataset in .tgz format from https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view.
+Move the CUB_200_2011.tgz file to the folder ./data/CUB_200_2011. If this folder does not exist, create it first.
 Open Anaconda prompt and clone this repository:
 ```bash
 git clone https://github.com/Ramonprogramming/AI-FACT
