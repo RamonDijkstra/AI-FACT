@@ -19,25 +19,27 @@ Due to time constraints, we were not able to create all models used in the origi
 * Anaconda. Available at: https://www.anaconda.com/distribution/
 
 ## Getting started
-Download the CUB-200 2011 dataset in .tgz format from https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view.
-Move the CUB_200_2011.tgz file to the folder ./data/CUB_200_2011. If this folder does not exist, create it first.
-Open Anaconda prompt and clone this repository:
+1. Download the CUB-200 2011 dataset in .tgz format from https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view.
+2. Move the CUB_200_2011.tgz file to the folder ./data/CUB_200_2011. If this folder does not exist, create it first.
+3. Download all the pre-trained models from https://drive.google.com/drive/folders/1LnzXdh_Fg5lbIyDqpmbqjoyAHKmdhvdB?usp=sharing.
+4. Move the pre-trained models to the folder ./saved_models. If this folder does not exist, create it first.
+5. Open Anaconda prompt and clone this repository:
 ```bash
 git clone https://github.com/Ramonprogramming/AI-FACT
 ```
-Move to the directory:
+6. Move to the directory:
 ```bash
 cd AI-FACT
 ```
-Create the environment:
+7. Create the environment:
 ```bash
 conda env create -f environment.yml
 ```
-Activate the environment:
+8. Activate the environment:
 ```bash
 conda activate FACT_AI
 ```
-View the notebook with the experimental results:
+9. View the notebook with the experimental results:
 ```bash
 jupyter notebook results.ipynb
 ```
