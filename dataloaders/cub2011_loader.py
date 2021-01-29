@@ -65,27 +65,32 @@ def load_data(batch_size=128, num_workers=0):
     # retrieve the dataset
     data_set = ImageFolder('./data/CUB_200_2011/CUB_200_2011/images', transform=transform)
 
-    # split the data in 70% train, 15% test and 15% validation
-    train_split = int(0.7 * len(data_set))
-    val_test_split = len(data_set) - train_split
-    trainset, val_testset = torch.utils.data.random_split(
-        data_set, [train_split, val_test_split]
-    )
-    val_split = int(len(val_testset)/2)
-    test_split = len(val_testset) - val_split
-    valset, testset = torch.utils.data.random_split(
-        val_testset, [val_split, test_split]
+    # retrieve the training and test split
+    train_test_split = pd.read_csv(os.path.join('./data/CUB_200_2011', 'CUB_200_2011', 'train_test_split.txt'),
+                                       sep=' ', names=['img_id', 'is_training_img'])
+
+    # split the dataset into train 50% and test 50%
+    train_indices = train_test_split[train_test_split.is_training_img == 1]
+    test_indices = train_test_split[train_test_split.is_training_img == 0]
+    train_set = torch.utils.data.Subset(data_set, train_indices)
+    test_set = torch.utils.data.Subset(data_set, test_indices)
+
+    # split the test set into validation 50% and test 50%
+    val_split = int(len(test_set)/2)
+    test_split = len(test_set) - val_split
+    val_set, test_set = torch.utils.data.random_split(
+        test_set, [val_split, test_split]
     )
 
     # create the dataloaders
     trainloader = DataLoader(
-        trainset, batch_size=batch_size, num_workers=num_workers, shuffle=True
+        train_set, batch_size=batch_size, num_workers=num_workers, shuffle=True
     )
     valloader = DataLoader(
-        valset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        val_set, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
     testloader = DataLoader(
-        testset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        test_set, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
 
     # 200 classes for CUB-200
