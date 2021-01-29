@@ -37,32 +37,27 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from models.attackers.inversion_attacker_2 import *
 from models.lenet.complex_lenet import *
 from models.resnet.complex_resnet import *
-from models.vgg16.complex_vgg16 import *
 
 # import dataloaders
 from dataloaders.cifar10_loader import load_data as load_cifar10_data
 from dataloaders.cifar100_loader import load_data as load_cifar100_data
-from dataloaders.cub2011_loader import load_data as load_cub200_data
 
 # initialize our model dictionary
 gan_model_dict = {}
 gan_model_dict['Complex_LeNet'] = ComplexLeNet
 gan_model_dict['Complex_ResNet-56'] = ComplexResNet
 gan_model_dict['Complex_ResNet-110'] = ComplexResNet
-gan_model_dict['Complex_VGG-16'] = ComplexVGG16
 
 # initialize our dataset dictionary
 dataset_dict = {}
 dataset_dict['CIFAR-10'] = load_cifar10_data
 dataset_dict['CIFAR-100'] = load_cifar100_data
-dataset_dict['CUB-200'] = load_cub200_data
 
 # initialize our U-net shape dictionary
 unet_shape_dict = {}
 unet_shape_dict['Complex_LeNet'] = (6,64,128,256,512)
 unet_shape_dict['Complex_ResNet-56'] = (16,64,128,256,512)
 unet_shape_dict['Complex_ResNet-110'] = (16,64,128,256,512)
-unet_shape_dict['Complex_VGG-16'] = (256,64,128,256,512)
 
 # initialize our early stopping criteria
 stop_criteria = EarlyStopping(
@@ -216,7 +211,7 @@ if __name__ == '__main__':
     # model hyperparameters
     parser.add_argument('--gan_model', default='Complex_LeNet', type=str,
                         help='What model to use for the GAN. Default is Complex_LeNet.',
-                        choices=['Complex_LeNet', 'Complex_VGG-16', 'Complex_ResNet-56','Complex_ResNet-110'])
+                        choices=['Complex_LeNet', 'Complex_ResNet-56', 'Complex_ResNet-110'])
     parser.add_argument('--dataset', default='CIFAR-10', type=str,
                         help='What dataset to use. Default is CIFAR-10.',
                         choices=['CIFAR-10', 'CIFAR-100', 'CUB-200'])
