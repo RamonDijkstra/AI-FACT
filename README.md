@@ -1,5 +1,5 @@
 # AI-FACT
-In the context of the course FACT in AI at the Universiteit van Amsterdam (UvA), we attempted to reproduce a paper on confidentiality in AI. The paper reproduced in this repository is *Interpretable Complex-Valued Neural Networks for Privacy Protection* by [Xiang et. al](https://arxiv.org/abs/1901.09546#:~:text=Interpretable%20Complex%2DValued%20Neural%20Networks%20for%20Privacy%20Protection,-Liyao%20Xiang%2C%20Haotian&text=Previous%20studies%20have%20found%20that,without%20too%20much%20accuracy%20degradation.). Their paper provides a framework in which part of the AI processing can be moved from the device to the cloud without the loss of confidentiality due to adversarial attacks. 
+In the context of the course FACT in AI at the Universiteit van Amsterdam (UvA), we attempted to reproduce a paper on confidentiality in AI. The paper reproduced in this repository is *Interpretable Complex-Valued Neural Networks for Privacy Protection* by [Xiang et. al](https://arxiv.org/abs/1901.09546#:~:text=Interpretable%20Complex%2DValued%20Neural%20Networks%20for%20Privacy%20Protection,-Liyao%20Xiang%2C%20Haotian&text=Previous%20studies%20have%20found%20that,without%20too%20much%20accuracy%20degradation.). Their paper provides a framework in which part of the AI processing can be moved from the device to the cloud without the loss of confidentiality due to adversarial attacks.
 
 This repository contains a PyTorch Lightning implementation of the experiments from the paper by [Xiang et. al](https://arxiv.org/abs/1901.09546#:~:text=Interpretable%20Complex%2DValued%20Neural%20Networks%20for%20Privacy%20Protection,-Liyao%20Xiang%2C%20Haotian&text=Previous%20studies%20have%20found%20that,without%20too%20much%20accuracy%20degradation.). To run the experiments, please follow the instructions below.
 
@@ -32,8 +32,8 @@ jupyter notebook results.ipynb
 New experiments can be conducted using the *main_pl.py* file. The model and training can be customized by passing command line arguments. The following arguments are supported:
 ```bash
 usage: main_pl.py [-h] [--model MODEL] [--dataset DATASET]
-			   [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS] 
-			   [--epochs EPOCHS] [--k K] [--log_dir LOG_DIR] 
+			   [--batch_size BATCH_SIZE] [--num_workers NUM_WORKERS]
+			   [--epochs EPOCHS] [--k K] [--log_dir LOG_DIR]
 			   [--progress_bar] [--seed SEED] [--lr LR]
 
 optional arguments:
@@ -43,7 +43,7 @@ optional arguments:
 					LeNet - ['CIFAR-10', 'CIFAR-100']
 					ResNet-56 - ['CIFAR-10', 'CIFAR-100']
   --batch_size BATCH_SIZE	Batch size. Accepts int values. Default is 256.
-  --num_workers NUM_WORKERS	Number of workers for the dataloader. Accepts int values. Default is 0 (truly deterministic). 
+  --num_workers NUM_WORKERS	Number of workers for the dataloader. Accepts int values. Default is 0 (truly deterministic).
   --epochs EPOCHS		Number of epochs used in training. Accepts int values Default is 10.
   --k K				Level of k-anonimity. K-1 fake features are used when training. Accepts int values. Default is 2.
   --log_dir LOG_DIR		Directory for the PyTorch Lightning logs. Accepts string values. Default is 'complex_logs/'.
@@ -59,5 +59,5 @@ optional arguments:
 * Reinier Bekkenutte - reinier.bekkenutte@student.uva.nl
 
 ## Acknowledgements
-* Pytorch Lightning implementation and some of the models were developed using information available in the Deep Learning Course of the UvA (https://uvadlc.github.io/). 
-* The U-net implementation for the inversion attack model was adapted from https://github.com/milesial/Pytorch-UNet.
+* Pytorch Lightning implementation and some of the models were developed using information available in the Deep Learning Course of the UvA (https://uvadlc.github.io/).
+* The U-net implementation for the inversion attack model was adapted from https://amaarora.github.io/2020/09/13/unet.html.

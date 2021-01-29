@@ -73,6 +73,12 @@ stop_criteria = EarlyStopping(
         mode='max'
     )
 
+# initialize checkpoint callback
+checkpoint_callback = ModelCheckpoint(monitor='val_acc',
+                        mode='max',
+                        save_top_k=1,
+                        save_weights_only=True)
+
 def train_model(args):
     """
     Function for training and testing a model.
@@ -106,11 +112,6 @@ def train_model(args):
     num_classes, trainloader, valloader, testloader = load_data(
         args.dataset, args.batch_size, args.num_workers
     )
-
-    checkpoint_callback = ModelCheckpoint(monitor='val_acc',
-                            mode='max',
-                            save_top_k=1,
-                            save_weights_only=True)
 
     # check whether to use early stopping
     if args.no_early_stopping:
